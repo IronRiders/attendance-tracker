@@ -439,7 +439,8 @@ app.post('/api/attendance/scan', (req, res) => {
                             
                             if (nextSession) {
                                 const dayName = dayNames[nextSession.day];
-                                message = `Check-in not allowed. Next session: ${dayName} ${nextSession.start}-${nextSession.end}`;
+                                const sessionName = nextSession.session_name || `Session ${nextSession.session}`;
+                                message = `Check-in not allowed. ${sessionName}: ${dayName} ${nextSession.start}-${nextSession.end}`;
                             }
                             
                             return res.status(403).json({ 
@@ -447,7 +448,8 @@ app.post('/api/attendance/scan', (req, res) => {
                                 nextSession: nextSession ? {
                                     day: dayNames[nextSession.day],
                                     startTime: nextSession.start,
-                                    endTime: nextSession.end
+                                    endTime: nextSession.end,
+                                    sessionName: nextSession.session_name || `Session ${nextSession.session}`
                                 } : null
                             });
                         });

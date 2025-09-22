@@ -325,7 +325,8 @@
                         const dayName = dayNames[next.day];
                         const startTime12 = formatTime12Hour(next.start);
                         const endTime12 = formatTime12Hour(next.end);
-                        message = `Outside meeting hours<br>Next session: ${dayName} ${startTime12}-${endTime12}`;
+                        const sessionName = next.session_name || `Session ${next.session}`;
+                        message = `Outside meeting hours<br>${sessionName}: ${dayName} ${startTime12}-${endTime12}`;
                     }
                     
                     showStatus(message, 'warning');
