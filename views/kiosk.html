@@ -9,7 +9,7 @@
 <body>
     <div class="kiosk-container">
         <div class="kiosk-card">
-            <h1 style="color: #667eea; margin-bottom: 2rem;">ChainLynx Attendance</h1>
+            <h1 style="color: #9A061C; margin-bottom: 2rem;">ChainLynx Attendance</h1>
             
             <div id="status-display" class="status-message status-info">
                 <strong>Ready to scan</strong><br>
@@ -30,7 +30,7 @@
             <!-- Manual entry option -->
             <div id="manualEntry" class="hidden">
                 <p style="margin: 1rem 0; color: #666;">
-                    Can't scan? <a href="#" onclick="toggleManualEntry()" style="color: #667eea;">Enter manually</a>
+                    Can't scan? <a href="#" onclick="toggleManualEntry()" style="color: #9A061C;">Enter manually</a>
                 </p>
             </div>
             
@@ -61,7 +61,7 @@
             <!-- Admin access -->
             <div style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #eee;">
                 <small style="color: #999;">
-                    <a href="/login" style="color: #667eea; text-decoration: none;">Admin Access</a> | 
+                    <a href="/login" style="color: #9A061C; text-decoration: none;">Admin Access</a> | 
                     <span id="datetime"></span>
                 </small>
             </div>
@@ -114,10 +114,10 @@
         let recentBarcodeScans = new Map(); // Track recent scans for debounce
 
         // Utility function to parse UTC timestamps from database
-        function parseUTCTimestamp(timestampStr) {
-            // Database timestamps are in format '2025-09-21 20:36:43' and stored as UTC
-            // Convert to ISO format and explicitly mark as UTC
-            const isoString = timestampStr.replace(' ', 'T') + 'Z'; // Add 'Z' to indicate UTC
+        function parseTimestamp(timestampStr) {
+            // Database timestamps are now stored in the configured timezone
+            // Parse as local timezone timestamp (no 'Z' suffix)
+            const isoString = timestampStr.replace(' ', 'T');
             return new Date(isoString);
         }
 
@@ -551,8 +551,8 @@
                     const timestampStr = member.last_checkin;
                     console.log('Original timestamp:', timestampStr);
                     
-                    // Parse the UTC timestamp properly
-                    const dbTimestamp = parseUTCTimestamp(timestampStr);
+                    // Parse the timestamp properly
+                    const dbTimestamp = parseTimestamp(timestampStr);
                     
                     console.log('Parsed as UTC, displayed in local time:', dbTimestamp);
                     console.log('Current time:', new Date());

@@ -44,7 +44,7 @@
         <div class="card">
             <div class="flex justify-between align-center">
                 <h2>Current Members</h2>
-                <button class="btn" onclick="loadMembers()">Refresh</button>
+                <button class="btn btn-secondary" onclick="loadMembers()" style="padding: 12px 24px; font-size: 16px;">Refresh</button>
             </div>
             
             <div id="loading" class="spinner hidden"></div>
@@ -798,10 +798,10 @@
                             <td>${member.barcode}</td>
                             <td>${new Date(member.created_at).toLocaleDateString()}</td>
                             <td>
-                                <button class="btn" onclick="editMember(${member.id})" 
-                                        style="padding: 6px 12px; margin-right: 5px;">Edit</button>
-                                <button class="btn btn-danger" onclick="deleteMember(${member.id}, '${member.name}')" 
-                                        style="padding: 6px 12px;">Delete</button>
+                                <button class="btn btn-secondary" onclick="editMember(${member.id})" 
+                                        style="margin-right: 5px; padding: 12px 24px; font-size: 16px;">Edit</button>
+                                <button class="btn btn-danger" onclick="deleteMember(${member.id}, '${member.name}')"
+                                        style="padding: 12px 24px; font-size: 16px;">Delete</button>
                             </td>
                         `;
                         tbody.appendChild(row);

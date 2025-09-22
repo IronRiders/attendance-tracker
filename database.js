@@ -335,13 +335,17 @@ class Database {
 
     // Attendance operations
     recordAttendance(memberId, isCheckin, needsReview = false, callback) {
-        this.db.run('INSERT INTO attendance_records (member_id, is_checkin, needs_review) VALUES (?, ?, ?)',
-            [memberId, isCheckin, needsReview], callback);
+        const timezone = process.env.APP_TIMEZONE || moment.tz.guess();
+        const timestamp = moment().tz(timezone).format('YYYY-MM-DD HH:mm:ss');
+        this.db.run('INSERT INTO attendance_records (member_id, is_checkin, needs_review, scan_time) VALUES (?, ?, ?, ?)',
+            [memberId, isCheckin, needsReview, timestamp], callback);
     }
 
     recordAutoLogout(memberId, callback) {
-        this.db.run('INSERT INTO attendance_records (member_id, is_checkin, is_auto_logout, needs_review) VALUES (?, ?, ?, ?)',
-            [memberId, false, true, true], callback);
+        const timezone = process.env.APP_TIMEZONE || moment.tz.guess();
+        const timestamp = moment().tz(timezone).format('YYYY-MM-DD HH:mm:ss');
+        this.db.run('INSERT INTO attendance_records (member_id, is_checkin, is_auto_logout, needs_review, scan_time) VALUES (?, ?, ?, ?, ?)',
+            [memberId, false, true, true, timestamp], callback);
     }
 
     getAttendanceRecords(callback) {
