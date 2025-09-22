@@ -5,6 +5,7 @@ const path = require('path');
 const bcrypt = require('bcrypt');
 const moment = require('moment');
 const cron = require('node-cron');
+const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 const Database = require('./database');
 
@@ -107,35 +108,103 @@ app.use(express.static('public'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+// Security headers
+app.use((req, res, next) => {
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    next();
+});
+
+// Rate limiting for authentication routes
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 5, // limit each IP to 5 requests per windowMs
+    message: 'Too many login attempts, please try again later.',
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
 // Session configuration
 app.use(session({
-    secret: process.env.SESSION_SECRET || 'attendance-system-secret',
+    secret: process.env.SESSION_SECRET || 'attendance-system-secret-' + Math.random(),
     resave: false,
     saveUninitialized: false,
+    name: 'attendance_session',
     cookie: { 
         secure: false, // Set to true in production with HTTPS
-        maxAge: 24 * 60 * 60 * 1000 // 24 hours
+        httpOnly: true,
+        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        sameSite: 'strict'
     }
 }));
 
 // Authentication middleware
 const requireAuth = (req, res, next) => {
     if (req.session && req.session.authenticated) {
-        next();
+        // Regenerate session ID to prevent session fixation
+        if (!req.session.regenerated) {
+            req.session.regenerate((err) => {
+                if (err) {
+                    console.error('Session regeneration error:', err);
+                }
+                req.session.authenticated = true;
+                req.session.regenerated = true;
+                next();
+            });
+        } else {
+            next();
+        }
     } else {
-        res.redirect('/login');
+        // Clear any potentially corrupted session
+        if (req.session) {
+            req.session.destroy();
+        }
+        if (req.xhr || req.headers.accept && req.headers.accept.indexOf('json') > -1) {
+            // Return JSON for API requests
+            res.status(401).json({ error: 'Authentication required' });
+        } else {
+            // Redirect to login for page requests
+            res.redirect('/login');
+        }
     }
 };
 
 // Routes
 // Home page - redirect to kiosk
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'views/kiosk.html'));
+    // Auto-logout any admin session when accessing kiosk
+    if (req.session && req.session.authenticated) {
+        req.session.destroy((err) => {
+            if (err) {
+                console.error('Error destroying session on kiosk access:', err);
+            }
+            res.clearCookie('attendance_session');
+            res.redirect('/kiosk?logout=auto');
+        });
+    } else {
+        res.sendFile(path.join(__dirname, 'views/kiosk.html'));
+    }
 });
 
 // Kiosk interface
 app.get('/kiosk', (req, res) => {
-    res.sendFile(path.join(__dirname, 'views/kiosk.html'));
+    // Auto-logout any admin session when accessing kiosk
+    if (req.session && req.session.authenticated) {
+        req.session.destroy((err) => {
+            if (err) {
+                console.error('Error destroying session on kiosk access:', err);
+            }
+            res.clearCookie('attendance_session');
+            res.redirect('/kiosk?logout=auto');
+        });
+    } else {
+        res.sendFile(path.join(__dirname, 'views/kiosk.html'));
+    }
 });
 
 // Login page
@@ -144,29 +213,73 @@ app.get('/login', (req, res) => {
 });
 
 // Login POST
-app.post('/login', async (req, res) => {
+app.post('/login', authLimiter, async (req, res) => {
     const { username, password } = req.body;
     
-    db.getAdminByUsername(username, async (err, admin) => {
+    // Input validation
+    if (!username || !password) {
+        return res.status(400).json({ error: 'Username and password are required' });
+    }
+    
+    if (typeof username !== 'string' || typeof password !== 'string') {
+        return res.status(400).json({ error: 'Invalid input format' });
+    }
+    
+    // Trim and validate length
+    const cleanUsername = username.trim();
+    if (cleanUsername.length === 0 || cleanUsername.length > 50) {
+        return res.status(400).json({ error: 'Invalid username length' });
+    }
+    
+    if (password.length === 0 || password.length > 100) {
+        return res.status(400).json({ error: 'Invalid password length' });
+    }
+    
+    db.getAdminByUsername(cleanUsername, async (err, admin) => {
         if (err || !admin) {
+            // Use a consistent delay to prevent timing attacks
+            await new Promise(resolve => setTimeout(resolve, 1000));
             return res.status(401).json({ error: 'Invalid credentials' });
         }
         
-        const isValid = await bcrypt.compare(password, admin.password_hash);
-        if (isValid) {
-            req.session.authenticated = true;
-            req.session.username = username;
-            res.json({ success: true });
-        } else {
-            res.status(401).json({ error: 'Invalid credentials' });
+        try {
+            const isValid = await bcrypt.compare(password, admin.password_hash);
+            if (isValid) {
+                // Regenerate session to prevent session fixation
+                req.session.regenerate((err) => {
+                    if (err) {
+                        return res.status(500).json({ error: 'Login failed' });
+                    }
+                    req.session.authenticated = true;
+                    req.session.username = cleanUsername;
+                    req.session.loginTime = Date.now();
+                    res.json({ success: true });
+                });
+            } else {
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                res.status(401).json({ error: 'Invalid credentials' });
+            }
+        } catch (error) {
+            console.error('Login error:', error);
+            res.status(500).json({ error: 'Login failed' });
         }
     });
 });
 
 // Logout
 app.post('/logout', (req, res) => {
-    req.session.destroy();
-    res.json({ success: true });
+    if (req.session) {
+        req.session.destroy((err) => {
+            if (err) {
+                console.error('Logout error:', err);
+                return res.status(500).json({ error: 'Logout failed' });
+            }
+            res.clearCookie('attendance_session');
+            res.json({ success: true });
+        });
+    } else {
+        res.json({ success: true });
+    }
 });
 
 // Management interface

@@ -154,8 +154,41 @@
             }
         }
 
+        // Check if user was automatically logged out when accessing kiosk
+        function checkForAutoLogout() {
+            // Check if there's a logout indication in the URL or referrer
+            const urlParams = new URLSearchParams(window.location.search);
+            const wasLoggedOut = urlParams.get('logout') === 'auto';
+            const referrer = document.referrer;
+            
+            // Check if user came from management pages
+            const fromManagement = referrer.includes('/management') || referrer.includes('/reports');
+            
+            if (wasLoggedOut || fromManagement) {
+                const statusDisplay = document.getElementById('status-display');
+                statusDisplay.className = 'status-message status-info';
+                statusDisplay.innerHTML = '<strong>Admin session ended</strong><br>You have been automatically logged out for security';
+                
+                // Clear the URL parameter
+                if (wasLoggedOut) {
+                    const url = new URL(window.location);
+                    url.searchParams.delete('logout');
+                    window.history.replaceState({}, document.title, url);
+                }
+                
+                // Revert to normal message after 5 seconds
+                setTimeout(() => {
+                    statusDisplay.className = 'status-message status-info';
+                    statusDisplay.innerHTML = '<strong>Ready to scan</strong><br>Please scan your barcode or enter your ID';
+                }, 5000);
+            }
+        }
+
         // Initialize kiosk
         document.addEventListener('DOMContentLoaded', () => {
+            // Check if user was automatically logged out
+            checkForAutoLogout();
+            
             updateDateTime();
             setInterval(updateDateTime, 1000); // Update every second
             loadCurrentlyCheckedIn();

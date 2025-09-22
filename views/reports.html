@@ -140,6 +140,57 @@
         let attendanceData = [];
         let meetingSchedules = [];
 
+        // Authentication check function
+        async function checkAuth() {
+            try {
+                const response = await fetch('/api/members', {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+                
+                if (response.status === 401) {
+                    alert('Your session has expired. Please log in again.');
+                    window.location.href = '/login';
+                    return false;
+                }
+                
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                
+                return true;
+            } catch (error) {
+                console.error('Auth check failed:', error);
+                return false;
+            }
+        }
+
+        // Periodic authentication check
+        function startAuthCheck() {
+            // Check authentication every 5 minutes
+            setInterval(async () => {
+                const isAuthenticated = await checkAuth();
+                if (!isAuthenticated) {
+                    return; // checkAuth already handles redirect
+                }
+            }, 5 * 60 * 1000);
+        }
+
+        // Enhanced fetch with authentication handling
+        async function authenticatedFetch(url, options = {}) {
+            options.credentials = 'include';
+            
+            const response = await fetch(url, options);
+            
+            if (response.status === 401) {
+                alert('Your session has expired. Please log in again.');
+                window.location.href = '/login';
+                throw new Error('Authentication required');
+            }
+            
+            return response;
+        }
+
         // Fetch meeting schedules when page loads
         async function loadMeetingSchedules() {
             try {
@@ -356,7 +407,16 @@
         }
 
         // Initialize page
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Check authentication on page load
+            const isAuthenticated = await checkAuth();
+            if (!isAuthenticated) {
+                return; // checkAuth handles redirect
+            }
+            
+            // Start periodic authentication checks
+            startAuthCheck();
+            
             initializeDateInputs();
             loadMembers();
             loadMeetingSchedules();
