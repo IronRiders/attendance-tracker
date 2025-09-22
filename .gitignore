@@ -80,7 +80,6 @@ dist
 
 # Gatsby files
 .cache/
-public
 
 # Storybook build outputs
 .out
@@ -118,3 +117,5 @@ sessions/
 
 # Uploads (if any)
 uploads/
+
+.copilot-ignore
