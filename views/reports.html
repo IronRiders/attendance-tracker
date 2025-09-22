@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports - ChainLynx Attendance</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>ChainLynx Attendance - Reports</h1>
+            <div class="nav">
+                <a href="/management">Management</a>
+                <a href="/reports" class="active">Reports</a>
+                <a href="/kiosk">Kiosk</a>
+                <a href="#" onclick="logout()">Logout</a>
+            </div>
+        </div>
+
+        <!-- Main Content Layout -->
+        <div class="reports-layout">
+            <div class="reports-main">
+        <!-- Report Controls -->
+        <div class="card">
+            <h2>Generate Report</h2>
+            <div class="report-controls">
+                <div class="form-group">
+                    <label for="startDate">Start Date:</label>
+                    <input type="date" id="startDate" name="startDate">
+                </div>
+                
+                <div class="form-group">
+                    <label for="endDate">End Date:</label>
+                    <input type="date" id="endDate" name="endDate">
+                </div>
+                
+                <div class="form-group">
+                    <label for="memberSelect">Filter by Member:</label>
+                    <select id="memberSelect" name="memberSelect">
+                        <option value="">All Members</option>
+                    </select>
+                </div>
+                
+                <div class="form-group" style="display: flex; align-items: end;">
+                    <button class="btn" onclick="generateReport()">Generate Report</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Calendar View -->
+        <div id="calendarSection" class="card hidden">
+            <h2>Attendance Calendar</h2>
+            <div class="flex justify-between align-center mb-1">
+                <button class="btn btn-secondary" onclick="previousMonth()" id="prevMonthBtn">← Previous</button>
+                <h3 id="calendarTitle">Loading...</h3>
+                <button class="btn btn-secondary" onclick="nextMonth()" id="nextMonthBtn">Next →</button>
+            </div>
+            <div id="calendar" class="calendar">
+                <!-- Calendar will be generated here -->
+            </div>
+        </div>
+
+        <!-- Daily Records Section -->
+        <div id="dailyRecordsSection" class="card hidden">
+            <h2 id="dailyRecordsTitle">Daily Attendance Records</h2>
+            <div id="dailyRecordsContent">
+                <p class="text-center" style="color: #666;">Click on a date in the calendar to view attendance records for that day.</p>
+            </div>
+        </div>
+
+        <!-- Flagged Records for Review -->
+        <div id="flaggedSection" class="card hidden">
+            <h2>Records Requiring Review</h2>
+            <p style="color: #666; margin-bottom: 1rem;">
+                These records were created by automatic logout and may need manual review.
+            </p>
+            
+            <div id="flaggedLoading" class="spinner hidden"></div>
+            
+            <div class="table-container">
+                <table id="flaggedTable">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Reason</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="flaggedTableBody">
+                        <!-- Flagged records will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Detailed Records -->
+        <div id="recordsSection" class="card hidden">
+            <h2>Detailed Attendance Records</h2>
+            <div id="recordsLoading" class="spinner hidden"></div>
+            
+            <div class="table-container">
+                <table id="recordsTable">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Action</th>
+                            <th>Type</th>
+                            <th>Barcode</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recordsTableBody">
+                        <!-- Records will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+            </div>
+            
+            <!-- User Status Sidebar -->
+            <div class="reports-sidebar">
+                <div class="card">
+                    <h2>User Status</h2>
+                    <div id="userStatusLoading" class="spinner hidden"></div>
+                    <div id="userStatusList">
+                        <!-- User status will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentDate = new Date();
+        let allMembers = [];
+        let attendanceData = [];
+        let meetingSchedules = [];
+
+        // Fetch meeting schedules when page loads
+        async function loadMeetingSchedules() {
+            try {
+                const response = await fetch('/api/meeting-schedules');
+                if (response.ok) {
+                    meetingSchedules = await response.json();
+                } else {
+                    console.error('Failed to load meeting schedules');
+                    meetingSchedules = [];
+                }
+            } catch (error) {
+                console.error('Error loading meeting schedules:', error);
+                meetingSchedules = [];
+            }
+        }
+
+        // Utility function to parse timestamps from database
+        function parseUTCTimestamp(timestampStr) {
+            // Database timestamps are in format '2025-09-21 20:36:43' and already stored as UTC by SQLite
+            // Convert to ISO format but treat as local time to avoid double UTC conversion
+            const isoString = timestampStr.replace(' ', 'T'); // Don't add 'Z' - treat as local
+            return new Date(isoString);
+        }
+
+        // Utility function to get local date string for comparison
+        function getLocalDateString(date) {
+            // Get YYYY-MM-DD in local timezone
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        // Function to determine which meeting schedule session an attendance record belongs to
+        function getSessionForAttendance(attendanceTime, attendanceDate) {
+            const dayOfWeek = attendanceDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
+            
+            // Get meeting schedules for this day of week
+            const daySchedules = meetingSchedules.filter(schedule => schedule.day_of_week === dayOfWeek);
+            
+            if (daySchedules.length === 0) {
+                return { sessionNumber: null, sessionName: null };
+            }
+            
+            // Convert attendance time to minutes since midnight for comparison
+            const attendanceMinutes = attendanceTime.getHours() * 60 + attendanceTime.getMinutes();
+            
+            // Find which session the attendance time falls within (with some tolerance)
+            for (let schedule of daySchedules) {
+                const [startHour, startMin] = schedule.start_time.split(':').map(Number);
+                const [endHour, endMin] = schedule.end_time.split(':').map(Number);
+                
+                const startMinutes = startHour * 60 + startMin;
+                const endMinutes = endHour * 60 + endMin;
+                
+                // Allow 15-minute tolerance before start and 30-minute tolerance after end
+                const toleranceStart = startMinutes - 15;
+                const toleranceEnd = endMinutes + 30;
+                
+                if (attendanceMinutes >= toleranceStart && attendanceMinutes <= toleranceEnd) {
+                    return {
+                        sessionNumber: schedule.session_number,
+                        sessionName: schedule.session_name || `Session ${schedule.session_number}`,
+                        scheduleInfo: schedule
+                    };
+                }
+            }
+            
+            // If no exact match, find the closest session
+            let closestSession = null;
+            let closestDistance = Infinity;
+            
+            for (let schedule of daySchedules) {
+                const [startHour, startMin] = schedule.start_time.split(':').map(Number);
+                const [endHour, endMin] = schedule.end_time.split(':').map(Number);
+                
+                const startMinutes = startHour * 60 + startMin;
+                const endMinutes = endHour * 60 + endMin;
+                
+                // Calculate distance to session (0 if within session time)
+                let distance;
+                if (attendanceMinutes < startMinutes) {
+                    distance = startMinutes - attendanceMinutes;
+                } else if (attendanceMinutes > endMinutes) {
+                    distance = attendanceMinutes - endMinutes;
+                } else {
+                    distance = 0;
+                }
+                
+                if (distance < closestDistance) {
+                    closestDistance = distance;
+                    closestSession = {
+                        sessionNumber: schedule.session_number,
+                        sessionName: schedule.session_name || `Session ${schedule.session_number}`,
+                        scheduleInfo: schedule
+                    };
+                }
+            }
+            
+            return closestSession || { sessionNumber: null, sessionName: null };
+        }
+
+        // User Status Functions
+        async function loadUserStatus() {
+            const userStatusLoading = document.getElementById('userStatusLoading');
+            const userStatusList = document.getElementById('userStatusList');
+            
+            try {
+                userStatusLoading.classList.remove('hidden');
+                
+                // Fetch all members and their total attendance hours
+                const [membersResponse, currentlyCheckedInResponse] = await Promise.all([
+                    fetch('/api/members'),
+                    fetch('/api/currently-checked-in')
+                ]);
+                
+                if (!membersResponse.ok || !currentlyCheckedInResponse.ok) {
+                    throw new Error('Failed to fetch user status data');
+                }
+                
+                const members = await membersResponse.json();
+                const currentlyCheckedIn = await currentlyCheckedInResponse.json();
+                
+                // Calculate total hours for each member
+                const memberHours = await Promise.all(members.map(async member => {
+                    const totalHours = await calculateMemberTotalHours(member.barcode);
+                    const isCheckedIn = currentlyCheckedIn.some(checkedIn => checkedIn.barcode === member.barcode);
+                    return {
+                        ...member,
+                        totalHours,
+                        isCheckedIn,
+                        status: isCheckedIn ? 'Checked In' : 'Checked Out'
+                    };
+                }));
+                
+                // Sort by total hours (descending)
+                memberHours.sort((a, b) => b.totalHours - a.totalHours);
+                
+                displayUserStatus(memberHours);
+                
+            } catch (error) {
+                console.error('Error loading user status:', error);
+                userStatusList.innerHTML = '<p style="color: #f44336; text-align: center;">Error loading user status</p>';
+            } finally {
+                userStatusLoading.classList.add('hidden');
+            }
+        }
+
+        async function calculateMemberTotalHours(barcode) {
+            try {
+                const response = await fetch('/api/attendance');
+                if (!response.ok) return 0;
+                
+                const allRecords = await response.json();
+                const memberRecords = allRecords.filter(record => record.barcode === barcode);
+                
+                let totalHours = 0;
+                let checkInTime = null;
+                
+                // Sort records by timestamp
+                memberRecords.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+                
+                memberRecords.forEach(record => {
+                    if (record.action === 'check_in') {
+                        checkInTime = new Date(record.timestamp);
+                    } else if (record.action === 'check_out' && checkInTime) {
+                        const checkOutTime = new Date(record.timestamp);
+                        const sessionHours = (checkOutTime - checkInTime) / (1000 * 60 * 60); // Convert to hours
+                        totalHours += sessionHours;
+                        checkInTime = null;
+                    }
+                });
+                
+                // If still checked in, calculate current session hours
+                if (checkInTime) {
+                    const now = new Date();
+                    const currentSessionHours = (now - checkInTime) / (1000 * 60 * 60);
+                    totalHours += currentSessionHours;
+                }
+                
+                return Math.round(totalHours * 100) / 100; // Round to 2 decimal places
+            } catch (error) {
+                console.error('Error calculating member hours:', error);
+                return 0;
+            }
+        }
+
+        function displayUserStatus(memberHours) {
+            const userStatusList = document.getElementById('userStatusList');
+            
+            if (memberHours.length === 0) {
+                userStatusList.innerHTML = '<p style="text-align: center; color: #666;">No members found</p>';
+                return;
+            }
+            
+            const html = memberHours.map(member => `
+                <div class="user-status-item">
+                    <div>
+                        <div class="user-status-name">${member.name}</div>
+                        <div class="user-status-hours">${member.totalHours.toFixed(1)}h total</div>
+                    </div>
+                    <div class="user-status-${member.isCheckedIn ? 'checked-in' : 'checked-out'}">
+                        ${member.status}
+                    </div>
+                </div>
+            `).join('');
+            
+            userStatusList.innerHTML = html;
+        }
+
+        // Auto-refresh user status every 30 seconds
+        function setupAutoRefresh() {
+            setInterval(loadUserStatus, 30000); // 30 seconds
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeDateInputs();
+            loadMembers();
+            loadMeetingSchedules();
+            generateReport();
+            loadUserStatus(); // Load user status on page load
+            setupAutoRefresh(); // Start auto-refresh
+        });
+
+        function initializeDateInputs() {
+            const today = new Date();
+            const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+            const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+            
+            // Use local date formatting instead of ISO to avoid timezone offset
+            const firstDayStr = `${firstDay.getFullYear()}-${String(firstDay.getMonth() + 1).padStart(2, '0')}-${String(firstDay.getDate()).padStart(2, '0')}`;
+            const lastDayStr = `${lastDay.getFullYear()}-${String(lastDay.getMonth() + 1).padStart(2, '0')}-${String(lastDay.getDate()).padStart(2, '0')}`;
+            
+            document.getElementById('startDate').value = firstDayStr;
+            document.getElementById('endDate').value = lastDayStr;
+        }
+
+        async function loadMembers() {
+            try {
+                const response = await fetch('/api/members');
+                allMembers = await response.json();
+                
+                const select = document.getElementById('memberSelect');
+                select.innerHTML = '<option value="">All Members</option>';
+                
+                allMembers.forEach(member => {
+                    const option = document.createElement('option');
+                    option.value = member.id;
+                    option.textContent = member.name;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading members:', error);
+            }
+        }
+
+        async function generateReport() {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            const memberId = document.getElementById('memberSelect').value;
+            
+            if (!startDate || !endDate) {
+                alert('Please select both start and end dates');
+                return;
+            }
+
+            // Show loading
+            document.getElementById('recordsLoading').classList.remove('hidden');
+            
+            try {
+                // Load detailed records
+                let recordsUrl = `/api/attendance?startDate=${startDate}&endDate=${endDate}`;
+                if (memberId) {
+                    recordsUrl += `&memberId=${memberId}`;
+                }
+                
+                const recordsResponse = await fetch(recordsUrl);
+                attendanceData = await recordsResponse.json();
+                
+                // Update displays
+                updateCalendar();
+                updateRecordsTable();
+                loadFlaggedRecords();
+                
+                // Generate and download CSV report
+                generateAndDownloadCSV(startDate, endDate);
+                
+                // Show sections
+                document.getElementById('calendarSection').classList.remove('hidden');
+                document.getElementById('recordsSection').classList.remove('hidden');
+                document.getElementById('flaggedSection').classList.remove('hidden');
+                
+            } catch (error) {
+                console.error('Error generating report:', error);
+                alert('Error generating report. Please try again.');
+            }
+            
+            document.getElementById('recordsLoading').classList.add('hidden');
+        }
+
+        function updateCalendar() {
+            const calendar = document.getElementById('calendar');
+            const title = document.getElementById('calendarTitle');
+            
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            
+            title.textContent = `${currentDate.toLocaleString('default', { month: 'long' })} ${year}`;
+            
+            // Clear calendar
+            calendar.innerHTML = '';
+            
+            // Add day headers
+            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            days.forEach(day => {
+                const header = document.createElement('div');
+                header.className = 'calendar-header';
+                header.textContent = day;
+                calendar.appendChild(header);
+            });
+            
+            // Get first day of month and number of days
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            
+            // Add empty cells for days before month starts
+            for (let i = 0; i < firstDay; i++) {
+                const emptyDay = document.createElement('div');
+                emptyDay.className = 'calendar-day';
+                calendar.appendChild(emptyDay);
+            }
+            
+            // Add days of the month
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayElement = document.createElement('div');
+                dayElement.className = 'calendar-day';
+                
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const today = new Date();
+                const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+                
+                if (dateStr === todayStr) {
+                    dayElement.classList.add('today');
+                }
+                
+                // Check if there's attendance data for this day
+                const dayRecords = attendanceData.filter(record => {
+                    const recordDate = parseUTCTimestamp(record.scan_time);
+                    const recordDateStr = getLocalDateString(recordDate);
+                    return recordDateStr === dateStr;
+                });
+                
+                // Count unique people who attended this day
+                const uniqueAttendees = new Set(dayRecords.map(record => record.name)).size;
+                
+                if (uniqueAttendees > 0) {
+                    dayElement.classList.add('has-attendance');
+                }
+                
+                // Add click handler to show daily records
+                dayElement.addEventListener('click', () => {
+                    showDailyRecords(dateStr);
+                });
+                
+                // Make cursor pointer for clickable days
+                dayElement.style.cursor = 'pointer';
+                
+                dayElement.innerHTML = `
+                    <div class="date">${day}</div>
+                    ${uniqueAttendees > 0 ? `<div class="attendance-count">${uniqueAttendees}</div>` : ''}
+                `;
+                
+                calendar.appendChild(dayElement);
+            }
+        }
+
+        function showDailyRecords(dateStr) {
+            const dailySection = document.getElementById('dailyRecordsSection');
+            const titleElement = document.getElementById('dailyRecordsTitle');
+            const contentElement = document.getElementById('dailyRecordsContent');
+            
+            // Format the date for display
+            const displayDate = new Date(dateStr + 'T00:00:00');
+            const formattedDate = displayDate.toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            
+            titleElement.textContent = `Attendance Records - ${formattedDate}`;
+            
+            // Filter attendance data for the selected date
+            const dayRecords = attendanceData.filter(record => {
+                const recordDate = parseUTCTimestamp(record.scan_time);
+                const recordDateStr = getLocalDateString(recordDate);
+                return recordDateStr === dateStr;
+            });
+            
+            if (dayRecords.length === 0) {
+                contentElement.innerHTML = `
+                    <div class="text-center" style="padding: 2rem; color: #666;">
+                        <p>No attendance records found for ${formattedDate}</p>
+                    </div>
+                `;
+            } else {
+                // Group records by member
+                const recordsByMember = {};
+                dayRecords.forEach(record => {
+                    if (!recordsByMember[record.name]) {
+                        recordsByMember[record.name] = [];
+                    }
+                    recordsByMember[record.name].push(record);
+                });
+                
+                // Sort records by time for each member
+                Object.keys(recordsByMember).forEach(memberName => {
+                    recordsByMember[memberName].sort((a, b) => 
+                        parseUTCTimestamp(a.scan_time) - parseUTCTimestamp(b.scan_time));
+                });
+                
+                // Generate HTML for daily records
+                let html = '<div class="daily-records-container">';
+                
+                Object.keys(recordsByMember).sort().forEach(memberName => {
+                    const memberRecords = recordsByMember[memberName];
+                    const targetDate = new Date(dateStr + 'T00:00:00');
+                    
+                    // Group records by meeting schedule session
+                    const sessionGroups = {};
+                    
+                    memberRecords.forEach(record => {
+                        const recordTime = parseUTCTimestamp(record.scan_time);
+                        const sessionInfo = getSessionForAttendance(recordTime, targetDate);
+                        
+                        // Use session number as key, default to "unscheduled" if no session match
+                        const sessionKey = sessionInfo.sessionNumber !== null ? 
+                            `session_${sessionInfo.sessionNumber}` : 'unscheduled';
+                        
+                        if (!sessionGroups[sessionKey]) {
+                            sessionGroups[sessionKey] = {
+                                records: [],
+                                sessionName: sessionInfo.sessionName || 'Unscheduled',
+                                sessionNumber: sessionInfo.sessionNumber
+                            };
+                        }
+                        
+                        sessionGroups[sessionKey].records.push(record);
+                    });
+                    
+                    // Sort sessions by session number (unscheduled goes last)
+                    const sortedSessions = Object.entries(sessionGroups).sort((a, b) => {
+                        const [keyA, dataA] = a;
+                        const [keyB, dataB] = b;
+                        
+                        if (keyA === 'unscheduled') return 1;
+                        if (keyB === 'unscheduled') return -1;
+                        
+                        return (dataA.sessionNumber || 0) - (dataB.sessionNumber || 0);
+                    });
+                    
+                    // Display each session
+                    sortedSessions.forEach(([sessionKey, sessionData], sessionIndex) => {
+                        const sessionRecords = sessionData.records;
+                        
+                        // Sort records by time within session
+                        sessionRecords.sort((a, b) => 
+                            parseUTCTimestamp(a.scan_time) - parseUTCTimestamp(b.scan_time));
+                        
+                        // Find first check-in and last check-out in this session
+                        const sessionCheckIns = sessionRecords.filter(r => r.is_checkin);
+                        const sessionCheckOuts = sessionRecords.filter(r => !r.is_checkin);
+                        
+                        let checkInInfo = '';
+                        let checkOutInfo = '';
+                        let totalTime = 0;
+                        
+                        // Get first check-in of session
+                        if (sessionCheckIns.length > 0) {
+                            const checkIn = sessionCheckIns[0];
+                            const time = parseUTCTimestamp(checkIn.scan_time);
+                            let typeInfo = '';
+                            if (checkIn.is_auto_logout) {
+                                typeInfo = ' <span style="color: #dc3545; font-size: 0.8rem;">(Auto-Logout)</span>';
+                            } else if (checkIn.needs_review) {
+                                typeInfo = ' <span style="color: #ffc107; font-size: 0.8rem;">(Needs Review)</span>';
+                            }
+                            checkInInfo = `<span style="color: #28a745; font-weight: bold;">Check In: ${time.toLocaleTimeString()}${typeInfo}</span>`;
+                        }
+                        
+                        // Get last check-out of session
+                        if (sessionCheckOuts.length > 0) {
+                            const checkOut = sessionCheckOuts[sessionCheckOuts.length - 1];
+                            const time = parseUTCTimestamp(checkOut.scan_time);
+                            let typeInfo = '';
+                            if (checkOut.is_auto_logout) {
+                                typeInfo = ' <span style="color: #dc3545; font-size: 0.8rem;">(Auto-Logout)</span>';
+                            } else if (checkOut.needs_review) {
+                                typeInfo = ' <span style="color: #ffc107; font-size: 0.8rem;">(Needs Review)</span>';
+                            }
+                            checkOutInfo = `<span style="color: #dc3545; font-weight: bold;">Check Out: ${time.toLocaleTimeString()}${typeInfo}</span>`;
+                        }
+                        
+                        // Calculate session time
+                        if (sessionCheckIns.length > 0 && sessionCheckOuts.length > 0) {
+                            const checkInTime = parseUTCTimestamp(sessionCheckIns[0].scan_time);
+                            const checkOutTime = parseUTCTimestamp(sessionCheckOuts[sessionCheckOuts.length - 1].scan_time);
+                            const diffMs = checkOutTime - checkInTime;
+                            const diffHours = diffMs / (1000 * 60 * 60);
+                            if (diffHours > 0 && diffHours < 24) { // Sanity check
+                                totalTime = diffHours;
+                            }
+                        }
+                        
+                        // Display name only on first session line
+                        const nameCell = sessionIndex === 0 ? 
+                            `<h4 style="margin: 0; color: #333; font-weight: bold; min-width: 120px;">${memberName}</h4>` : 
+                            `<div style="min-width: 120px;"></div>`;
+                        
+                        // Add session name with styling
+                        const sessionNameDisplay = sortedSessions.length > 1 ? 
+                            ` <span style="color: #007bff; font-size: 0.85rem; font-weight: 600;">(${sessionData.sessionName})</span>` : '';
+                        
+                        // Build the inline display
+                        html += `
+                            <div class="member-daily-record-inline" style="display: flex; align-items: center; justify-content: space-between; padding: 1rem; margin-bottom: 0.5rem; border: 1px solid #e0e0e0; border-radius: 8px; background-color: #fafafa;">
+                                <div style="display: flex; align-items: center; gap: 2rem; flex-wrap: wrap;">
+                                    ${nameCell}
+                                    ${checkInInfo ? checkInInfo + sessionNameDisplay : '<span style="color: #999;">No Check In</span>'}
+                                    ${checkOutInfo ? checkOutInfo : '<span style="color: #999;">No Check Out</span>'}
+                                </div>
+                                <div>
+                                    ${totalTime > 0 ? `<span style="font-weight: bold; color: #28a745;">${totalTime.toFixed(1)} hours</span>` : '<span style="color: #999;">Incomplete</span>'}
+                                </div>
+                            </div>
+                        `;
+                    });
+                });
+                
+                html += '</div>';
+                contentElement.innerHTML = html;
+            }
+            
+            // Show the section
+            dailySection.classList.remove('hidden');
+            
+            // Scroll to the daily records section
+            dailySection.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function calculateDailyHours(records) {
+            let totalHours = 0;
+            let checkInTime = null;
+            
+            records.forEach(record => {
+                if (record.is_checkin) {
+                    checkInTime = parseUTCTimestamp(record.scan_time);
+                } else if (checkInTime) {
+                    const checkOutTime = parseUTCTimestamp(record.scan_time);
+                    const diffMs = checkOutTime - checkInTime;
+                    const diffHours = diffMs / (1000 * 60 * 60);
+                    if (diffHours > 0 && diffHours < 24) { // Sanity check
+                        totalHours += diffHours;
+                    }
+                    checkInTime = null;
+                }
+            });
+            
+            return totalHours;
+        }
+
+        function updateRecordsTable() {
+            const tbody = document.getElementById('recordsTableBody');
+            tbody.innerHTML = '';
+            
+            if (attendanceData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center">No records found</td></tr>';
+                return;
+            }
+            
+            attendanceData.forEach(record => {
+                const row = document.createElement('tr');
+                const date = parseUTCTimestamp(record.scan_time);
+                
+                let recordType = 'Manual';
+                let typeColor = '#333';
+                
+                if (record.is_auto_logout) {
+                    recordType = 'Auto-Logout';
+                    typeColor = '#dc3545';
+                } else if (record.needs_review) {
+                    recordType = 'Needs Review';
+                    typeColor = '#ffc107';
+                }
+                
+                row.innerHTML = `
+                    <td>${record.name}</td>
+                    <td>${date.toLocaleDateString()}</td>
+                    <td>${date.toLocaleTimeString()}</td>
+                    <td>
+                        <span style="color: ${record.is_checkin ? '#28a745' : '#dc3545'}; font-weight: bold;">
+                            ${record.is_checkin ? 'Check In' : 'Check Out'}
+                        </span>
+                    </td>
+                    <td>
+                        <span style="color: ${typeColor}; font-weight: ${record.is_auto_logout ? 'bold' : 'normal'};">
+                            ${recordType}
+                        </span>
+                    </td>
+                    <td>${record.barcode}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function previousMonth() {
+            currentDate.setMonth(currentDate.getMonth() - 1);
+            updateCalendar();
+        }
+
+        function nextMonth() {
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            updateCalendar();
+        }
+
+        async function logout() {
+            try {
+                const response = await fetch('/logout', { method: 'POST' });
+                if (response.ok) {
+                    window.location.href = '/login';
+                }
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
+        }
+
+        async function loadFlaggedRecords() {
+            const loading = document.getElementById('flaggedLoading');
+            const tbody = document.getElementById('flaggedTableBody');
+            
+            loading.classList.remove('hidden');
+            
+            try {
+                const response = await fetch('/api/flagged-records');
+                const flaggedRecords = await response.json();
+                
+                tbody.innerHTML = '';
+                
+                if (flaggedRecords.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-center">No records requiring review</td></tr>';
+                } else {
+                    flaggedRecords.forEach(record => {
+                        const row = document.createElement('tr');
+                        const date = parseUTCTimestamp(record.scan_time);
+                        
+                        row.innerHTML = `
+                            <td>${record.name}</td>
+                            <td>${date.toLocaleDateString()}</td>
+                            <td>${date.toLocaleTimeString()}</td>
+                            <td>
+                                <span style="color: #dc3545;">
+                                    ${record.is_auto_logout ? 'Automatic Logout' : 'Manual Review Required'}
+                                </span>
+                            </td>
+                            <td>
+                                <button class="btn btn-success" onclick="markAsReviewed(${record.id})" 
+                                        style="padding: 4px 8px; font-size: 12px;">
+                                    Mark as Reviewed
+                                </button>
+                            </td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading flagged records:', error);
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center">Error loading flagged records</td></tr>';
+            }
+            
+            loading.classList.add('hidden');
+        }
+
+        async function markAsReviewed(recordId) {
+            try {
+                const response = await fetch(`/api/flagged-records/${recordId}/review`, {
+                    method: 'PUT'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Reload flagged records to update the display
+                    loadFlaggedRecords();
+                    // Also reload the main records to update the type column
+                    generateReport();
+                } else {
+                    alert('Failed to mark record as reviewed');
+                }
+            } catch (error) {
+                console.error('Error marking record as reviewed:', error);
+                alert('Error marking record as reviewed');
+            }
+        }
+
+        function generateAndDownloadCSV(startDate, endDate) {
+            // Group records by member and calculate hours
+            const memberSummary = {};
+            
+            // Group all records by member
+            attendanceData.forEach(record => {
+                if (!memberSummary[record.name]) {
+                    memberSummary[record.name] = {
+                        name: record.name,
+                        barcode: record.barcode,
+                        records: []
+                    };
+                }
+                memberSummary[record.name].records.push(record);
+            });
+            
+            // Calculate total hours for each member
+            Object.keys(memberSummary).forEach(memberName => {
+                const member = memberSummary[memberName];
+                let totalHours = 0;
+                let checkInTime = null;
+                
+                // Sort records by time
+                member.records.sort((a, b) => 
+                    parseUTCTimestamp(a.scan_time) - parseUTCTimestamp(b.scan_time));
+                
+                // Calculate hours by pairing check-ins with check-outs
+                member.records.forEach(record => {
+                    if (record.is_checkin) {
+                        checkInTime = parseUTCTimestamp(record.scan_time);
+                    } else if (checkInTime) {
+                        const checkOutTime = parseUTCTimestamp(record.scan_time);
+                        const diffMs = checkOutTime - checkInTime;
+                        const diffHours = diffMs / (1000 * 60 * 60);
+                        if (diffHours > 0 && diffHours < 24) { // Sanity check
+                            totalHours += diffHours;
+                        }
+                        checkInTime = null;
+                    }
+                });
+                
+                member.totalHours = totalHours;
+            });
+            
+            // Generate CSV content
+            let csv = 'Name,ID,Hours\n';
+            
+            // Sort members by name
+            const sortedMembers = Object.values(memberSummary).sort((a, b) => 
+                a.name.localeCompare(b.name));
+            
+            sortedMembers.forEach(member => {
+                const row = [
+                    `"${member.name}"`, // Quote name in case it contains commas
+                    member.barcode,
+                    member.totalHours.toFixed(2)
+                ].join(',');
+                csv += row + '\n';
+            });
+            
+            // Create and download the file
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `attendance-summary-${startDate}-to-${endDate}.csv`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+            
+            console.log('CSV report generated and downloaded');
+        }
+
+        // Export functions (optional enhancement)
+        function exportToCSV() {
+            if (attendanceData.length === 0) {
+                alert('No data to export');
+                return;
+            }
+            
+            let csv = 'Name,Date,Time,Action,Barcode\n';
+            
+            attendanceData.forEach(record => {
+                const date = new Date(record.scan_time);
+                const row = [
+                    record.name,
+                    date.toLocaleDateString(),
+                    date.toLocaleTimeString(),
+                    record.is_checkin ? 'Check In' : 'Check Out',
+                    record.barcode
+                ].join(',');
+                csv += row + '\n';
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `attendance-report-${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+
+        // Add export button functionality (you can add this button to the UI if needed)
+        function addExportButton() {
+            const reportControls = document.querySelector('.report-controls');
+            const exportBtn = document.createElement('div');
+            exportBtn.className = 'form-group';
+            exportBtn.style.display = 'flex';
+            exportBtn.style.alignItems = 'end';
+            exportBtn.innerHTML = '<button class="btn btn-secondary" onclick="exportToCSV()">Export CSV</button>';
+            reportControls.appendChild(exportBtn);
+        }
+        
+        // Uncomment to add export functionality
+        // addExportButton();
+    </script>
+</body>
+</html>
