@@ -5,6 +5,7 @@ const path = require('path');
 const bcrypt = require('bcrypt');
 const moment = require('moment');
 const cron = require('node-cron');
+require('dotenv').config();
 const Database = require('./database');
 
 const app = express();
@@ -108,7 +109,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 // Session configuration
 app.use(session({
-    secret: 'attendance-system-secret',
+    secret: process.env.SESSION_SECRET || 'attendance-system-secret',
     resave: false,
     saveUninitialized: false,
     cookie: { 
@@ -645,7 +646,7 @@ app.post('/api/meeting-schedules/refresh', requireAuth, (req, res) => {
 // Start server
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
-    console.log('Default admin credentials: username=admin, password=admin123');
+    console.log(`Admin credentials loaded from environment variables: username=${process.env.ADMIN_USERNAME || 'admin'}`);
 });
 
 // Graceful shutdown

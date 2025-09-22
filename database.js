@@ -1,5 +1,6 @@
 const sqlite3 = require('sqlite3').verbose();
 const bcrypt = require('bcrypt');
+require('dotenv').config();
 
 class Database {
     constructor() {
@@ -150,16 +151,27 @@ class Database {
     }
 
     async createDefaultAdmin() {
-        const defaultUsername = 'admin';
-        const defaultPassword = 'admin123';
+        const defaultUsername = process.env.ADMIN_USERNAME || 'admin';
+        const defaultPassword = process.env.ADMIN_PASSWORD || 'admin123';
         
         // Check if admin already exists
         this.db.get('SELECT * FROM admins WHERE username = ?', [defaultUsername], async (err, row) => {
             if (!row) {
+                // Create new admin if doesn't exist
                 const hashedPassword = await bcrypt.hash(defaultPassword, 10);
                 this.db.run('INSERT INTO admins (username, password_hash) VALUES (?, ?)', 
                     [defaultUsername, hashedPassword]);
-                console.log(`Default admin created: username=${defaultUsername}, password=${defaultPassword}`);
+                console.log(`Default admin created: username=${defaultUsername}`);
+            } else {
+                // Check if existing password matches the environment variable
+                const passwordMatches = await bcrypt.compare(defaultPassword, row.password_hash);
+                if (!passwordMatches) {
+                    // Update password if it doesn't match
+                    const newHashedPassword = await bcrypt.hash(defaultPassword, 10);
+                    this.db.run('UPDATE admins SET password_hash = ? WHERE username = ?', 
+                        [newHashedPassword, defaultUsername]);
+                    console.log(`Admin password updated from environment variables for user: ${defaultUsername}`);
+                }
             }
         });
     }
