@@ -1,5 +1,6 @@
 const sqlite3 = require('sqlite3').verbose();
 const bcrypt = require('bcrypt');
+const moment = require('moment-timezone');
 require('dotenv').config();
 
 class Database {
@@ -470,15 +471,15 @@ class Database {
 
     // Check if current time is within any active meeting session
     isWithinMeetingSchedule(callback) {
-        const now = new Date();
-        const dayOfWeek = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
+        // Get the configured timezone from environment, default to system timezone
+        const timezone = process.env.APP_TIMEZONE || moment.tz.guess();
+        const now = moment().tz(timezone);
+        const dayOfWeek = now.day(); // 0 = Sunday, 1 = Monday, etc.
         
-        // Use more explicit time formatting to ensure consistency
-        const hours = now.getHours().toString().padStart(2, '0');
-        const minutes = now.getMinutes().toString().padStart(2, '0');
-        const currentTime = `${hours}:${minutes}`;
+        // Use timezone-aware time formatting
+        const currentTime = now.format('HH:mm');
         
-        console.log(`Checking meeting schedule: Day ${dayOfWeek}, Time ${currentTime}`);
+        console.log(`Checking meeting schedule (${timezone}): Day ${dayOfWeek}, Time ${currentTime}`);
         
         this.db.get(`
             SELECT * FROM meeting_schedules 
@@ -498,15 +499,15 @@ class Database {
 
     // Get next available meeting session
     getNextMeetingSession(callback) {
-        const now = new Date();
-        const dayOfWeek = now.getDay();
+        // Get the configured timezone from environment, default to system timezone
+        const timezone = process.env.APP_TIMEZONE || moment.tz.guess();
+        const now = moment().tz(timezone);
+        const dayOfWeek = now.day();
         
-        // Use consistent time formatting
-        const hours = now.getHours().toString().padStart(2, '0');
-        const minutes = now.getMinutes().toString().padStart(2, '0');
-        const currentTime = `${hours}:${minutes}`;
+        // Use timezone-aware time formatting
+        const currentTime = now.format('HH:mm');
         
-        console.log(`Looking for next session after: Day ${dayOfWeek}, Time ${currentTime}`);
+        console.log(`Looking for next session after (${timezone}): Day ${dayOfWeek}, Time ${currentTime}`);
         
         // First try to find a session today that hasn't started yet
         this.db.get(`

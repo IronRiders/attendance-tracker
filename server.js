@@ -3,7 +3,7 @@ const session = require('express-session');
 const bodyParser = require('body-parser');
 const path = require('path');
 const bcrypt = require('bcrypt');
-const moment = require('moment');
+const moment = require('moment-timezone');
 const cron = require('node-cron');
 const rateLimit = require('express-rate-limit');
 require('dotenv').config();
@@ -321,6 +321,38 @@ app.post('/api/members', requireAuth, (req, res) => {
             }
         } else {
             res.json({ success: true, id: this.lastID });
+        }
+    });
+});
+
+// Public endpoint for kiosk self-registration (no authentication required)
+app.post('/api/kiosk/register', (req, res) => {
+    const { name, barcode } = req.body;
+    
+    if (!name || !barcode) {
+        return res.status(400).json({ error: 'Name and barcode are required' });
+    }
+    
+    // Additional validation for self-registration
+    if (name.length < 2 || name.length > 100) {
+        return res.status(400).json({ error: 'Name must be between 2 and 100 characters' });
+    }
+    
+    if (barcode.length < 1 || barcode.length > 50) {
+        return res.status(400).json({ error: 'Barcode must be between 1 and 50 characters' });
+    }
+    
+    db.addMember(name, barcode, function(err) {
+        if (err) {
+            if (err.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+                res.status(400).json({ error: 'This ID is already registered. Please use a different ID or contact an administrator.' });
+            } else {
+                console.error('Database error in kiosk registration:', err);
+                res.status(500).json({ error: 'Registration failed. Please try again or contact an administrator.' });
+            }
+        } else {
+            console.log(`New member registered via kiosk: ${name} (${barcode})`);
+            res.json({ success: true, id: this.lastID, message: 'Registration successful!' });
         }
     });
 });
