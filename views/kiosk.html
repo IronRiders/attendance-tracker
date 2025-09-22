@@ -335,8 +335,10 @@
 
         async function checkMeetingSchedule() {
             try {
+                console.log('Checking meeting schedule...');
                 const response = await fetch('/api/meeting-schedules/current');
                 const scheduleInfo = await response.json();
+                console.log('Schedule info received:', scheduleInfo);
                 
                 const statusDisplay = document.getElementById('status-display');
                 const input = document.getElementById('barcodeInput');
@@ -345,11 +347,13 @@
                     // Within active meeting session
                     const session = scheduleInfo.session;
                     const endTime12 = formatTime12Hour(session.end_time);
+                    console.log('Active session detected:', session);
                     showStatus(`Meeting Session ${session.session_number} Active<br>Sign-ins allowed until ${endTime12}`, 'success');
                     input.disabled = false;
                     input.placeholder = 'Scan barcode here...';
                 } else {
                     // Outside meeting hours
+                    console.log('No active session, next session:', scheduleInfo.nextSession);
                     let message = 'Outside meeting hours<br>Sign-ins not allowed';
                     
                     if (scheduleInfo.nextSession) {

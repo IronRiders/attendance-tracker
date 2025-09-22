@@ -472,7 +472,13 @@ class Database {
     isWithinMeetingSchedule(callback) {
         const now = new Date();
         const dayOfWeek = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
-        const currentTime = now.toTimeString().substring(0, 5); // HH:MM format
+        
+        // Use more explicit time formatting to ensure consistency
+        const hours = now.getHours().toString().padStart(2, '0');
+        const minutes = now.getMinutes().toString().padStart(2, '0');
+        const currentTime = `${hours}:${minutes}`;
+        
+        console.log(`Checking meeting schedule: Day ${dayOfWeek}, Time ${currentTime}`);
         
         this.db.get(`
             SELECT * FROM meeting_schedules 
@@ -480,14 +486,27 @@ class Database {
             AND is_active = true 
             AND start_time <= ? 
             AND end_time >= ?
-        `, [dayOfWeek, currentTime, currentTime], callback);
+        `, [dayOfWeek, currentTime, currentTime], (err, result) => {
+            if (result) {
+                console.log(`Active session found: Session ${result.session_number} (${result.start_time}-${result.end_time})`);
+            } else {
+                console.log('No active session found');
+            }
+            callback(err, result);
+        });
     }
 
     // Get next available meeting session
     getNextMeetingSession(callback) {
         const now = new Date();
         const dayOfWeek = now.getDay();
-        const currentTime = now.toTimeString().substring(0, 5);
+        
+        // Use consistent time formatting
+        const hours = now.getHours().toString().padStart(2, '0');
+        const minutes = now.getMinutes().toString().padStart(2, '0');
+        const currentTime = `${hours}:${minutes}`;
+        
+        console.log(`Looking for next session after: Day ${dayOfWeek}, Time ${currentTime}`);
         
         // First try to find a session today that hasn't started yet
         this.db.get(`
@@ -500,6 +519,7 @@ class Database {
             LIMIT 1
         `, [dayOfWeek, currentTime], (err, todaySession) => {
             if (!err && todaySession) {
+                console.log(`Next session today: Session ${todaySession.session} (${todaySession.start}-${todaySession.end})`);
                 return callback(null, todaySession);
             }
             
@@ -513,7 +533,12 @@ class Database {
                     CASE WHEN day_of_week > ? THEN day_of_week ELSE day_of_week + 7 END,
                     session_number
                 LIMIT 1
-            `, [dayOfWeek, dayOfWeek, dayOfWeek], callback);
+            `, [dayOfWeek, dayOfWeek, dayOfWeek], (err, nextSession) => {
+                if (nextSession) {
+                    console.log(`Next session this week: Day ${nextSession.day}, Session ${nextSession.session} (${nextSession.start}-${nextSession.end})`);
+                }
+                callback(err, nextSession);
+            });
         });
     }
 
