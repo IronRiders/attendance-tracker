@@ -914,8 +914,8 @@
                 if (result.success) {
                     // Reload flagged records to update the display
                     loadFlaggedRecords();
-                    // Also reload the main records to update the type column
-                    generateReport();
+                    // Also reload the main records to update the display (without downloading CSV)
+                    loadReportData();
                 } else {
                     alert('Failed to mark record as reviewed');
                 }
