@@ -343,7 +343,8 @@ class Database {
 
     recordAutoLogout(memberId, callback) {
         const timezone = process.env.APP_TIMEZONE || moment.tz.guess();
-        const timestamp = moment().tz(timezone).format('YYYY-MM-DD HH:mm:ss');
+        // Subtract 15 minutes from the current time for automatic checkout
+        const timestamp = moment().tz(timezone).subtract(15, 'minutes').format('YYYY-MM-DD HH:mm:ss');
         this.db.run('INSERT INTO attendance_records (member_id, is_checkin, is_auto_logout, needs_review, scan_time) VALUES (?, ?, ?, ?, ?)',
             [memberId, false, true, true, timestamp], callback);
     }
