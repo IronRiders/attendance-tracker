@@ -350,16 +350,18 @@
                 let totalHours = 0;
                 let checkInTime = null;
                 
-                // Sort records by timestamp
-                memberRecords.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+                // Sort records by scan_time
+                memberRecords.sort((a, b) => new Date(a.scan_time) - new Date(b.scan_time));
                 
                 memberRecords.forEach(record => {
-                    if (record.action === 'check_in') {
-                        checkInTime = new Date(record.timestamp);
-                    } else if (record.action === 'check_out' && checkInTime) {
-                        const checkOutTime = new Date(record.timestamp);
+                    if (record.is_checkin) {
+                        checkInTime = new Date(record.scan_time);
+                    } else if (!record.is_checkin && checkInTime) {
+                        const checkOutTime = new Date(record.scan_time);
                         const sessionHours = (checkOutTime - checkInTime) / (1000 * 60 * 60); // Convert to hours
-                        totalHours += sessionHours;
+                        if (sessionHours > 0 && sessionHours < 24) { // Sanity check
+                            totalHours += sessionHours;
+                        }
                         checkInTime = null;
                     }
                 });
@@ -368,7 +370,9 @@
                 if (checkInTime) {
                     const now = new Date();
                     const currentSessionHours = (now - checkInTime) / (1000 * 60 * 60);
-                    totalHours += currentSessionHours;
+                    if (currentSessionHours > 0 && currentSessionHours < 24) { // Sanity check
+                        totalHours += currentSessionHours;
+                    }
                 }
                 
                 return Math.round(totalHours * 100) / 100; // Round to 2 decimal places
@@ -420,7 +424,7 @@
             initializeDateInputs();
             loadMembers();
             loadMeetingSchedules();
-            generateReport();
+            loadReportData(); // Load report data and show sections without CSV download
             loadUserStatus(); // Load user status on page load
             setupAutoRefresh(); // Start auto-refresh
         });
@@ -457,13 +461,16 @@
             }
         }
 
-        async function generateReport() {
+        async function loadReportData() {
             const startDate = document.getElementById('startDate').value;
             const endDate = document.getElementById('endDate').value;
             const memberId = document.getElementById('memberSelect').value;
             
             if (!startDate || !endDate) {
-                alert('Please select both start and end dates');
+                // If no dates set, don't show any data but still show the sections
+                document.getElementById('calendarSection').classList.remove('hidden');
+                document.getElementById('recordsSection').classList.remove('hidden');
+                document.getElementById('flaggedSection').classList.remove('hidden');
                 return;
             }
 
@@ -485,20 +492,33 @@
                 updateRecordsTable();
                 loadFlaggedRecords();
                 
-                // Generate and download CSV report
-                generateAndDownloadCSV(startDate, endDate);
-                
                 // Show sections
                 document.getElementById('calendarSection').classList.remove('hidden');
                 document.getElementById('recordsSection').classList.remove('hidden');
                 document.getElementById('flaggedSection').classList.remove('hidden');
                 
             } catch (error) {
-                console.error('Error generating report:', error);
-                alert('Error generating report. Please try again.');
+                console.error('Error loading report data:', error);
+                alert('Error loading report data. Please try again.');
             }
             
             document.getElementById('recordsLoading').classList.add('hidden');
+        }
+
+        async function generateReport() {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            
+            if (!startDate || !endDate) {
+                alert('Please select both start and end dates');
+                return;
+            }
+
+            // Load the report data first
+            await loadReportData();
+            
+            // Then download the CSV
+            generateAndDownloadCSV(startDate, endDate);
         }
 
         function updateCalendar() {

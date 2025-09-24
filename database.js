@@ -372,7 +372,7 @@ class Database {
             
             // If records exist, run the main query
             this.db.all(`
-                SELECT DISTINCT m.id, m.name, ar.scan_time as last_checkin
+                SELECT DISTINCT m.id, m.name, m.barcode, ar.scan_time as last_checkin
                 FROM members m
                 JOIN attendance_records ar ON m.id = ar.member_id
                 WHERE ar.id = (
