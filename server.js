@@ -393,6 +393,38 @@ app.delete('/api/members/:id', requireAuth, (req, res) => {
     });
 });
 
+// Bulk import members from CSV
+app.post('/api/members/import', requireAuth, (req, res) => {
+    const { members } = req.body;
+    
+    if (!members || !Array.isArray(members) || members.length === 0) {
+        return res.status(400).json({ error: 'No valid members data provided' });
+    }
+    
+    // Validate each member
+    for (const member of members) {
+        if (!member.name || !member.barcode) {
+            return res.status(400).json({ error: 'Each member must have both name and barcode' });
+        }
+    }
+    
+    db.bulkAddMembers(members, (err, result) => {
+        if (err) {
+            console.error('Error importing members:', err);
+            res.status(500).json({ error: 'Database error during import' });
+        } else {
+            res.json({ 
+                success: true, 
+                imported: result.imported, 
+                skipped: result.skipped,
+                skippedMembers: result.skippedMembers || [],
+                errors: result.errors || [],
+                message: `Successfully imported ${result.imported} members, skipped ${result.skipped} duplicates`
+            });
+        }
+    });
+});
+
 // Attendance API
 app.post('/api/attendance/scan', (req, res) => {
     const { barcode } = req.body;

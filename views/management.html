@@ -40,6 +40,44 @@
             </form>
         </div>
 
+        <!-- Import Members from CSV -->
+        <div class="card">
+            <h2>Import Members from CSV</h2>
+            <div id="import-message" class="status-message hidden"></div>
+            
+            <p style="margin-bottom: 20px; color: #666; font-size: 14px;">
+                Upload a CSV file with two columns: Barcode (first column) and Name (second column).
+                Existing members with the same barcode will be skipped.
+            </p>
+            
+            <div class="form-group">
+                <label for="csvFile">Select CSV File:</label>
+                <input type="file" id="csvFile" accept=".csv" style="margin-bottom: 10px;">
+            </div>
+            
+            <div class="form-group">
+                <button type="button" class="btn btn-primary" onclick="importCSV()">Import CSV</button>
+                <button type="button" class="btn btn-secondary" onclick="clearImport()">Clear</button>
+            </div>
+            
+            <div id="import-preview" class="hidden" style="margin-top: 20px;">
+                <h3>Preview (first 5 rows):</h3>
+                <div class="table-container">
+                    <table id="previewTable">
+                        <thead>
+                            <tr>
+                                <th>Barcode</th>
+                                <th>Name</th>
+                            </tr>
+                        </thead>
+                        <tbody id="previewTableBody">
+                            <!-- Preview rows will be shown here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
         <!-- Members List -->
         <div class="card">
             <div class="flex justify-between align-center">
@@ -336,6 +374,51 @@
                     <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Import Results Modal -->
+    <div id="importResultsModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Import Results</h2>
+                <button class="modal-close" onclick="closeImportResultsModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="importSummary" class="import-summary">
+                    <!-- Import summary will be populated here -->
+                </div>
+                
+                <div id="skippedSection" class="skipped-section hidden" style="margin-top: 20px;">
+                    <h3>Skipped Members:</h3>
+                    <div class="table-container">
+                        <table id="skippedTable">
+                            <thead>
+                                <tr>
+                                    <th>Barcode</th>
+                                    <th>Name</th>
+                                    <th>Reason</th>
+                                </tr>
+                            </thead>
+                            <tbody id="skippedTableBody">
+                                <!-- Skipped members will be listed here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div id="errorSection" class="error-section hidden" style="margin-top: 20px;">
+                    <h3>Errors:</h3>
+                    <div class="error-list">
+                        <ul id="errorList">
+                            <!-- Errors will be listed here -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="closeImportResultsModal()">Close</button>
+            </div>
         </div>
     </div>
 
@@ -919,6 +1002,186 @@
                         barcodeInput = '';
                     }, 100);
                 }
+            }
+        });
+
+        // CSV Import Functions
+        async function importCSV() {
+            const fileInput = document.getElementById('csvFile');
+            const messageElement = document.getElementById('import-message');
+            
+            if (!fileInput.files.length) {
+                showMessage(messageElement, 'Please select a CSV file first.', 'error');
+                return;
+            }
+            
+            const file = fileInput.files[0];
+            
+            if (!file.name.toLowerCase().endsWith('.csv')) {
+                showMessage(messageElement, 'Please select a valid CSV file.', 'error');
+                return;
+            }
+            
+            try {
+                const csvText = await readFileAsText(file);
+                const parsedData = parseCSV(csvText);
+                
+                if (parsedData.length === 0) {
+                    showMessage(messageElement, 'The CSV file appears to be empty.', 'error');
+                    return;
+                }
+                
+                // Show preview
+                showPreview(parsedData);
+                
+                // Send to server for processing
+                const response = await fetch('/api/members/import', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ members: parsedData })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    // Show detailed results in modal popup
+                    showImportResultsModal(result);
+                    loadMembers(); // Refresh the members list
+                    clearImport();
+                } else {
+                    showMessage(messageElement, 
+                        result.error || 'Error importing members. Please try again.', 
+                        'error');
+                }
+                
+            } catch (error) {
+                console.error('Error importing CSV:', error);
+                showMessage(messageElement, 'Error processing CSV file. Please check the format.', 'error');
+            }
+        }
+        
+        function readFileAsText(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = e => resolve(e.target.result);
+                reader.onerror = reject;
+                reader.readAsText(file);
+            });
+        }
+        
+        function parseCSV(csvText) {
+            const lines = csvText.trim().split('\n');
+            const members = [];
+            
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+                
+                // Simple CSV parsing - split by comma and handle basic quoted fields
+                const columns = line.split(',').map(col => col.trim().replace(/^["']|["']$/g, ''));
+                
+                if (columns.length >= 2) {
+                    const barcode = columns[0].trim();
+                    const name = columns[1].trim();
+                    
+                    if (barcode && name) {
+                        members.push({ barcode, name });
+                    }
+                }
+            }
+            
+            return members;
+        }
+        
+        function showPreview(members) {
+            const previewDiv = document.getElementById('import-preview');
+            const previewBody = document.getElementById('previewTableBody');
+            
+            // Show first 5 rows
+            const previewData = members.slice(0, 5);
+            
+            previewBody.innerHTML = previewData.map(member => 
+                `<tr>
+                    <td>${escapeHtml(member.barcode)}</td>
+                    <td>${escapeHtml(member.name)}</td>
+                </tr>`
+            ).join('');
+            
+            previewDiv.classList.remove('hidden');
+        }
+        
+        function clearImport() {
+            document.getElementById('csvFile').value = '';
+            document.getElementById('import-preview').classList.add('hidden');
+            document.getElementById('import-message').classList.add('hidden');
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Import Results Modal Functions
+        function showImportResultsModal(result) {
+            const modal = document.getElementById('importResultsModal');
+            const summaryDiv = document.getElementById('importSummary');
+            const skippedSection = document.getElementById('skippedSection');
+            const errorSection = document.getElementById('errorSection');
+            const skippedTableBody = document.getElementById('skippedTableBody');
+            const errorList = document.getElementById('errorList');
+            
+            // Build summary message
+            let summaryHtml = `<div class="import-summary-success">
+                <h3>✅ Import Complete!</h3>
+                <p><strong>${result.imported}</strong> members successfully imported</p>`;
+            
+            if (result.skipped > 0) {
+                summaryHtml += `<p><strong>${result.skipped}</strong> members skipped (duplicates or errors)</p>`;
+            }
+            
+            summaryHtml += `</div>`;
+            summaryDiv.innerHTML = summaryHtml;
+            
+            // Show skipped members if any
+            if (result.skippedMembers && result.skippedMembers.length > 0) {
+                skippedTableBody.innerHTML = result.skippedMembers.map(member => 
+                    `<tr>
+                        <td>${escapeHtml(member.barcode || '')}</td>
+                        <td>${escapeHtml(member.name || '')}</td>
+                        <td>${escapeHtml(member.reason || 'Duplicate barcode')}</td>
+                    </tr>`
+                ).join('');
+                skippedSection.classList.remove('hidden');
+            } else {
+                skippedSection.classList.add('hidden');
+            }
+            
+            // Show errors if any
+            if (result.errors && result.errors.length > 0) {
+                errorList.innerHTML = result.errors.map(error => 
+                    `<li>${escapeHtml(error)}</li>`
+                ).join('');
+                errorSection.classList.remove('hidden');
+            } else {
+                errorSection.classList.add('hidden');
+            }
+            
+            // Show the modal
+            modal.classList.remove('hidden');
+        }
+        
+        function closeImportResultsModal() {
+            document.getElementById('importResultsModal').classList.add('hidden');
+        }
+
+        // Close modal when clicking outside of it
+        document.addEventListener('click', function(event) {
+            const modal = document.getElementById('importResultsModal');
+            if (event.target === modal) {
+                closeImportResultsModal();
             }
         });
     </script>

@@ -333,6 +333,87 @@ class Database {
             [name, barcode, id], callback);
     }
 
+    bulkAddMembers(members, callback) {
+        let imported = 0;
+        let skipped = 0;
+        let errors = [];
+        let skippedMembers = [];
+        
+        const processNextMember = (index) => {
+            if (index >= members.length) {
+                // All members processed
+                if (errors.length > 0) {
+                    console.error('Bulk import completed with errors:', errors);
+                }
+                return callback(null, { 
+                    imported, 
+                    skipped, 
+                    errors, 
+                    skippedMembers 
+                });
+            }
+            
+            const member = members[index];
+            
+            // Check if member already exists
+            this.getMemberByBarcode(member.barcode, (err, existingMember) => {
+                if (err) {
+                    const errorMsg = `Error checking barcode ${member.barcode}: ${err.message}`;
+                    errors.push(errorMsg);
+                    skippedMembers.push({
+                        barcode: member.barcode,
+                        name: member.name,
+                        reason: 'Database error during validation'
+                    });
+                    skipped++;
+                    return processNextMember(index + 1);
+                }
+                
+                if (existingMember) {
+                    // Skip duplicate
+                    skipped++;
+                    skippedMembers.push({
+                        barcode: member.barcode,
+                        name: member.name,
+                        reason: 'Duplicate barcode already exists'
+                    });
+                    console.log(`Skipping duplicate barcode: ${member.barcode}`);
+                    return processNextMember(index + 1);
+                }
+                
+                // Add new member
+                this.addMember(member.name, member.barcode, (err) => {
+                    if (err) {
+                        if (err.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+                            skipped++;
+                            skippedMembers.push({
+                                barcode: member.barcode,
+                                name: member.name,
+                                reason: 'Duplicate barcode constraint violation'
+                            });
+                            console.log(`Skipping duplicate barcode: ${member.barcode}`);
+                        } else {
+                            const errorMsg = `Error adding ${member.name} (${member.barcode}): ${err.message}`;
+                            errors.push(errorMsg);
+                            skippedMembers.push({
+                                barcode: member.barcode,
+                                name: member.name,
+                                reason: 'Database insertion error'
+                            });
+                            skipped++;
+                        }
+                    } else {
+                        imported++;
+                        console.log(`Added member: ${member.name} (${member.barcode})`);
+                    }
+                    processNextMember(index + 1);
+                });
+            });
+        };
+        
+        processNextMember(0);
+    }
+
     // Attendance operations
     recordAttendance(memberId, isCheckin, needsReview = false, callback) {
         const timezone = process.env.APP_TIMEZONE || moment.tz.guess();
