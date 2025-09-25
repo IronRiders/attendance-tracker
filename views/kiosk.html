@@ -13,14 +13,14 @@
             
             <div id="status-display" class="status-message status-info">
                 <strong>Ready to scan</strong><br>
-                Please scan your barcode or enter your ID
+                Please scan your barcode or enter your ID and press Enter
             </div>
             
             <div class="form-group">
                 <input type="text" 
                        id="barcodeInput" 
                        class="kiosk-input" 
-                       placeholder="Scan barcode here..."
+                       placeholder="Scan barcode or type ID and press Enter..."
                        autocomplete="off"
                        pattern="[0-9]*"
                        inputmode="numeric"
@@ -107,7 +107,6 @@
     </div>
 
     <script>
-        let scanTimeout;
         let barcodeBuffer = '';
         let recentScans = [];
         let isProcessing = false;
@@ -242,26 +241,10 @@
             }
         });
 
-        // Handle barcode input
-        document.getElementById('barcodeInput').addEventListener('input', (e) => {
-            const barcode = e.target.value.trim();
-            
-            // Clear previous timeout
-            clearTimeout(scanTimeout);
-            
-            if (barcode.length > 0) {
-                // Set timeout to process barcode after a short delay
-                scanTimeout = setTimeout(() => {
-                    processBarcode(barcode);
-                }, 300);
-            }
-        });
-
-        // Handle Enter key press
+        // Handle barcode input - process only on Enter key press
         document.getElementById('barcodeInput').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault();
-                clearTimeout(scanTimeout);
                 const barcode = e.target.value.trim();
                 if (barcode) {
                     processBarcode(barcode);
@@ -269,7 +252,7 @@
             }
         });
 
-        // Also handle fast barcode scanner input
+        // Handle fast barcode scanner input
         document.addEventListener('keypress', (e) => {
             const input = document.getElementById('barcodeInput');
             
@@ -280,22 +263,15 @@
                     input.focus();
                 }
                 
-                clearTimeout(scanTimeout);
-                
                 if (e.key === 'Enter') {
                     e.preventDefault();
-                    if (barcodeBuffer.length > 0) {
-                        input.value = barcodeBuffer;
-                        processBarcode(barcodeBuffer);
-                        barcodeBuffer = '';
+                    const barcode = input.value.trim();
+                    if (barcode) {
+                        processBarcode(barcode);
                     }
                 } else if (e.key.length === 1) { // Regular character
-                    barcodeBuffer += e.key;
-                    
-                    // Reset buffer after 100ms of inactivity
-                    scanTimeout = setTimeout(() => {
-                        barcodeBuffer = '';
-                    }, 100);
+                    // Let the character go to the input field naturally
+                    // No need for buffer management - the input field handles it
                 }
             }
         });
@@ -338,7 +314,7 @@
                 // Fallback - allow sign-ins if can't check schedule
                 const input = document.getElementById('barcodeInput');
                 input.disabled = false;
-                showStatus('Ready to scan<br>Please scan your barcode or enter your ID', 'info');
+                showStatus('Ready to scan<br>Please scan your barcode or enter your ID and press Enter', 'info');
             }
         }
 
@@ -354,7 +330,7 @@
                 
                 // Auto-clear warning after 3 seconds
                 setTimeout(() => {
-                    showStatus('Ready to scan<br>Please scan your barcode or enter your ID', 'info');
+                    showStatus('Ready to scan<br>Please scan your barcode or enter your ID and press Enter', 'info');
                 }, 3000);
                 
                 // Clear input and return
@@ -454,7 +430,7 @@
         function clearDisplay() {
             document.getElementById('memberInfo').classList.add('hidden');
             document.getElementById('actionFeedback').classList.add('hidden');
-            showStatus('Ready to scan<br>Please scan your barcode or enter your ID', 'info');
+            showStatus('Ready to scan<br>Please scan your barcode or enter your ID and press Enter', 'info');
             document.getElementById('barcodeInput').focus();
         }
 
@@ -652,7 +628,7 @@
             mainInput.focus();
             isProcessing = false;
             
-            showStatus('Ready to scan<br>Please scan your barcode or enter your ID', 'info');
+            showStatus('Ready to scan<br>Please scan your barcode or enter your ID and press Enter', 'info');
         }
 
         async function submitSignup() {
