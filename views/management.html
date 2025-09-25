@@ -59,23 +59,6 @@
                 <button type="button" class="btn btn-primary" onclick="importCSV()">Import CSV</button>
                 <button type="button" class="btn btn-secondary" onclick="clearImport()">Clear</button>
             </div>
-            
-            <div id="import-preview" class="hidden" style="margin-top: 20px;">
-                <h3>Preview (first 5 rows):</h3>
-                <div class="table-container">
-                    <table id="previewTable">
-                        <thead>
-                            <tr>
-                                <th>Barcode</th>
-                                <th>Name</th>
-                            </tr>
-                        </thead>
-                        <tbody id="previewTableBody">
-                            <!-- Preview rows will be shown here -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
         </div>
 
         <!-- Members List -->
@@ -1031,9 +1014,6 @@
                     return;
                 }
                 
-                // Show preview
-                showPreview(parsedData);
-                
                 // Send to server for processing
                 const response = await fetch('/api/members/import', {
                     method: 'POST',
@@ -1095,26 +1075,8 @@
             return members;
         }
         
-        function showPreview(members) {
-            const previewDiv = document.getElementById('import-preview');
-            const previewBody = document.getElementById('previewTableBody');
-            
-            // Show first 5 rows
-            const previewData = members.slice(0, 5);
-            
-            previewBody.innerHTML = previewData.map(member => 
-                `<tr>
-                    <td>${escapeHtml(member.barcode)}</td>
-                    <td>${escapeHtml(member.name)}</td>
-                </tr>`
-            ).join('');
-            
-            previewDiv.classList.remove('hidden');
-        }
-        
         function clearImport() {
             document.getElementById('csvFile').value = '';
-            document.getElementById('import-preview').classList.add('hidden');
             document.getElementById('import-message').classList.add('hidden');
         }
         
