@@ -42,8 +42,9 @@
                     </select>
                 </div>
                 
-                <div class="form-group" style="display: flex; align-items: end;">
+                <div class="form-group" style="display: flex; align-items: end; gap: 10px;">
                     <button class="btn" onclick="generateReport()">Generate Report</button>
+                    <button class="btn" onclick="generateASBReport()">Generate ASB Report</button>
                 </div>
             </div>
         </div>
@@ -519,6 +520,119 @@
             
             // Then download the CSV
             generateAndDownloadCSV(startDate, endDate);
+        }
+
+        async function generateASBReport() {
+            try {
+                // Load all attendance data (no date filtering)
+                const recordsResponse = await fetch('/api/attendance');
+                const records = await recordsResponse.json();
+
+                // Load all members with their types
+                const membersResponse = await fetch('/api/members');
+                const members = await membersResponse.json();
+
+                // Generate ASB format CSV with all data
+                generateASBCSV(records, members);
+                
+            } catch (error) {
+                console.error('Error generating ASB report:', error);
+                alert('Error generating ASB report. Please try again.');
+            }
+        }
+
+        function generateASBCSV(records, members) {
+            // Determine date range from actual data
+            if (records.length === 0) {
+                alert('No attendance records found in database.');
+                return;
+            }
+            
+            const dates = records.map(r => r.scan_time.split(' ')[0]);
+            const startDate = new Date(Math.min(...dates.map(d => new Date(d))));
+            const endDate = new Date(Math.max(...dates.map(d => new Date(d))));
+            
+            // Get unique dates from the actual data range
+            const dateRange = [];
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+            
+            for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
+                dateRange.push(new Date(date));
+            }
+
+            // Build CSV header
+            let csv = 'LAST,FIRST';
+            dateRange.forEach(date => {
+                csv += ',' + (date.getMonth() + 1) + '/' + date.getDate() + '/' + date.getFullYear();
+            });
+            csv += '\n';
+
+            // Separate officers and members
+            const officers = members.filter(m => m.member_type === 'Officer').sort((a, b) => {
+                const aLastName = a.name.split(' ').pop();
+                const bLastName = b.name.split(' ').pop();
+                return aLastName.localeCompare(bLastName);
+            });
+
+            const regularMembers = members.filter(m => m.member_type !== 'Officer').sort((a, b) => {
+                const aLastName = a.name.split(' ').pop();
+                const bLastName = b.name.split(' ').pop();
+                return aLastName.localeCompare(bLastName);
+            });
+
+            // Create attendance lookup
+            const attendanceLookup = {};
+            records.forEach(record => {
+                const date = new Date(record.scan_time).toDateString();
+                if (!attendanceLookup[record.barcode]) {
+                    attendanceLookup[record.barcode] = new Set();
+                }
+                attendanceLookup[record.barcode].add(date);
+            });
+
+            // Add officers section
+            csv += 'OFFICERS' + ','.repeat(dateRange.length + 1) + '\n';
+            officers.forEach(member => {
+                const nameParts = member.name.split(' ');
+                const firstName = nameParts.slice(0, -1).join(' ');
+                const lastName = nameParts[nameParts.length - 1];
+                
+                csv += `${lastName},${firstName}`;
+                dateRange.forEach(date => {
+                    const dateStr = date.toDateString();
+                    const hasAttendance = attendanceLookup[member.barcode] && attendanceLookup[member.barcode].has(dateStr);
+                    csv += ',' + (hasAttendance ? 'x' : '');
+                });
+                csv += '\n';
+            });
+
+            // Add members section
+            csv += 'MEMBERS' + ','.repeat(dateRange.length + 1) + '\n';
+            regularMembers.forEach(member => {
+                const nameParts = member.name.split(' ');
+                const firstName = nameParts.slice(0, -1).join(' ');
+                const lastName = nameParts[nameParts.length - 1];
+                
+                csv += `${lastName},${firstName}`;
+                dateRange.forEach(date => {
+                    const dateStr = date.toDateString();
+                    const hasAttendance = attendanceLookup[member.barcode] && attendanceLookup[member.barcode].has(dateStr);
+                    csv += ',' + (hasAttendance ? 'x' : '');
+                });
+                csv += '\n';
+            });
+
+            // Download the CSV file
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            const startDateStr = startDate.toISOString().split('T')[0];
+            const endDateStr = endDate.toISOString().split('T')[0];
+            a.download = `ASB-attendance-all-data-${startDateStr}-to-${endDateStr}.csv`;
+            a.click();
+            window.URL.revokeObjectURL(url);
         }
 
         function updateCalendar() {

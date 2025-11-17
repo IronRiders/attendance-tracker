@@ -122,6 +122,34 @@ class Database {
             });
         });
 
+        // Check members table for member_type column
+        this.db.all("PRAGMA table_info(members)", (err, columns) => {
+            if (err) {
+                console.error('Error getting members column info:', err);
+                return;
+            }
+
+            const hasMemberType = columns.some(col => col.name === 'member_type');
+
+            if (!hasMemberType) {
+                this.db.run("ALTER TABLE members ADD COLUMN member_type TEXT DEFAULT 'Member'", (err) => {
+                    if (err) {
+                        console.error('Error adding member_type column:', err);
+                    } else {
+                        console.log('Added member_type column to members table');
+                        // Set default member type for existing records
+                        this.db.run("UPDATE members SET member_type = 'Member' WHERE member_type IS NULL", (err) => {
+                            if (err) {
+                                console.error('Error setting default member types:', err);
+                            } else {
+                                console.log('Set default member types for existing records');
+                            }
+                        });
+                    }
+                });
+            }
+        });
+
         // Check meeting_schedules table for session_name column
         this.db.all("PRAGMA table_info(meeting_schedules)", (err, columns) => {
             if (err) {
@@ -269,9 +297,14 @@ class Database {
     }
 
     // Member operations
-    addMember(name, barcode, callback) {
-        this.db.run('INSERT INTO members (name, barcode) VALUES (?, ?)', 
-            [name, barcode], callback);
+    addMember(name, barcode, memberType = 'Member', callback) {
+        // If callback is passed as third parameter, handle old API
+        if (typeof memberType === 'function') {
+            callback = memberType;
+            memberType = 'Member';
+        }
+        this.db.run('INSERT INTO members (name, barcode, member_type) VALUES (?, ?, ?)', 
+            [name, barcode, memberType], callback);
     }
 
     getAllMembers(callback) {
@@ -328,9 +361,14 @@ class Database {
         });
     }
 
-    updateMember(id, name, barcode, callback) {
-        this.db.run('UPDATE members SET name = ?, barcode = ? WHERE id = ?',
-            [name, barcode, id], callback);
+    updateMember(id, name, barcode, memberType = 'Member', callback) {
+        // If callback is passed as fourth parameter, handle old API
+        if (typeof memberType === 'function') {
+            callback = memberType;
+            memberType = 'Member';
+        }
+        this.db.run('UPDATE members SET name = ?, barcode = ?, member_type = ? WHERE id = ?',
+            [name, barcode, memberType, id], callback);
     }
 
     // Attendance operations

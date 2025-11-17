@@ -306,13 +306,18 @@ app.get('/api/members', requireAuth, (req, res) => {
 });
 
 app.post('/api/members', requireAuth, (req, res) => {
-    const { name, barcode } = req.body;
+    const { name, barcode, memberType = 'Member' } = req.body;
     
     if (!name || !barcode) {
         return res.status(400).json({ error: 'Name and barcode are required' });
     }
     
-    db.addMember(name, barcode, function(err) {
+    // Validate member type
+    if (memberType && !['Member', 'Officer'].includes(memberType)) {
+        return res.status(400).json({ error: 'Invalid member type. Must be "Member" or "Officer"' });
+    }
+    
+    db.addMember(name, barcode, memberType, function(err) {
         if (err) {
             if (err.code === 'SQLITE_CONSTRAINT_UNIQUE') {
                 res.status(400).json({ error: 'Barcode already exists' });
@@ -342,7 +347,7 @@ app.post('/api/kiosk/register', (req, res) => {
         return res.status(400).json({ error: 'Barcode must be between 1 and 50 characters' });
     }
     
-    db.addMember(name, barcode, function(err) {
+    db.addMember(name, barcode, 'Member', function(err) {
         if (err) {
             if (err.code === 'SQLITE_CONSTRAINT_UNIQUE') {
                 res.status(400).json({ error: 'This ID is already registered. Please use a different ID or contact an administrator.' });
@@ -358,7 +363,7 @@ app.post('/api/kiosk/register', (req, res) => {
 });
 
 app.put('/api/members/:id', requireAuth, (req, res) => {
-    const { name, barcode } = req.body;
+    const { name, barcode, memberType = 'Member' } = req.body;
     const id = req.params.id;
     
     console.log('PUT /api/members/:id - ID:', id, 'Body:', req.body);
@@ -367,7 +372,12 @@ app.put('/api/members/:id', requireAuth, (req, res) => {
         return res.status(400).json({ error: 'Name and barcode are required' });
     }
     
-    db.updateMember(id, name, barcode, (err) => {
+    // Validate member type
+    if (memberType && !['Member', 'Officer'].includes(memberType)) {
+        return res.status(400).json({ error: 'Invalid member type. Must be "Member" or "Officer"' });
+    }
+    
+    db.updateMember(id, name, barcode, memberType, (err) => {
         if (err) {
             console.error('Database error updating member:', err);
             if (err.code === 'SQLITE_CONSTRAINT_UNIQUE') {

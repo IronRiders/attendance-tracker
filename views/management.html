@@ -5,6 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Management - ChainLynx Attendance</title>
     <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .officer-badge {
+            background-color: #9A061C;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .member-badge {
+            background-color: #6c757d;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -35,6 +55,14 @@
                            placeholder="Scan barcode or enter manually">
                 </div>
                 
+                <div class="form-group">
+                    <label for="memberType">Member Type:</label>
+                    <select id="memberType" name="memberType" required>
+                        <option value="Member" selected>Member</option>
+                        <option value="Officer">Officer</option>
+                    </select>
+                </div>
+                
                 <button type="submit" class="btn btn-success">Add Member</button>
                 <button type="button" class="btn btn-secondary" onclick="clearForm()">Clear</button>
             </form>
@@ -55,6 +83,7 @@
                         <tr>
                             <th>Name</th>
                             <th>Barcode</th>
+                            <th>Type</th>
                             <th>Added</th>
                             <th>Actions</th>
                         </tr>
@@ -331,6 +360,14 @@
                     <input type="text" id="editBarcode" name="barcode" required>
                 </div>
                 
+                <div class="form-group">
+                    <label for="editMemberType">Member Type:</label>
+                    <select id="editMemberType" name="memberType" required>
+                        <option value="Member">Member</option>
+                        <option value="Officer">Officer</option>
+                    </select>
+                </div>
+                
                 <div class="flex gap-1">
                     <button type="submit" class="btn btn-success">Save Changes</button>
                     <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
@@ -517,11 +554,8 @@
                 const result = await response.json();
                 
                 if (result.success) {
-                    showMessage(messageDiv, 'Member updated successfully!', 'success');
-                    setTimeout(() => {
-                        closeEditModal();
-                        loadMembers();
-                    }, 1500);
+                    closeEditModal();
+                    loadMembers();
                 } else {
                     showMessage(messageDiv, result.error || 'Failed to update member', 'error');
                 }
@@ -789,13 +823,16 @@
                 tbody.innerHTML = '';
                 
                 if (members.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="4" class="text-center">No members found</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-center">No members found</td></tr>';
                 } else {
                     members.forEach(member => {
                         const row = document.createElement('tr');
+                        const memberType = member.member_type || 'Member';
+                        const typeClass = memberType === 'Officer' ? 'officer-badge' : 'member-badge';
                         row.innerHTML = `
                             <td>${member.name}</td>
                             <td>${member.barcode}</td>
+                            <td><span class="${typeClass}">${memberType}</span></td>
                             <td>${new Date(member.created_at).toLocaleDateString()}</td>
                             <td>
                                 <button class="btn btn-secondary" onclick="editMember(${member.id})" 
@@ -808,7 +845,7 @@
                     });
                 }
             } catch (error) {
-                tbody.innerHTML = '<tr><td colspan="4" class="text-center">Error loading members</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center">Error loading members</td></tr>';
             }
             
             loading.classList.add('hidden');
@@ -820,6 +857,7 @@
                 document.getElementById('editId').value = member.id;
                 document.getElementById('editName').value = member.name;
                 document.getElementById('editBarcode').value = member.barcode;
+                document.getElementById('editMemberType').value = member.member_type || 'Member';
                 document.getElementById('editModal').classList.remove('hidden');
             }
         }
