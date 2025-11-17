@@ -548,18 +548,24 @@
                 return;
             }
             
-            const dates = records.map(r => r.scan_time.split(' ')[0]);
-            const startDate = new Date(Math.min(...dates.map(d => new Date(d))));
-            const endDate = new Date(Math.max(...dates.map(d => new Date(d))));
+            // Extract unique dates from records using the same format as the attendance lookup
+            const uniqueDateStrings = new Set();
+            records.forEach(record => {
+                const dateStr = new Date(record.scan_time).toDateString();
+                uniqueDateStrings.add(dateStr);
+            });
             
-            // Get unique dates from the actual data range
-            const dateRange = [];
-            const start = new Date(startDate);
-            const end = new Date(endDate);
+            // Convert to sorted array of date strings, then create Date objects for display
+            const sortedDateStrings = Array.from(uniqueDateStrings).sort((a, b) => {
+                return new Date(a).getTime() - new Date(b).getTime();
+            });
             
-            for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
-                dateRange.push(new Date(date));
-            }
+            // Create dateRange array with Date objects for header formatting
+            const dateRange = sortedDateStrings.map(dateStr => new Date(dateStr));
+            
+            // Get first and last dates for filename
+            const startDate = dateRange[0];
+            const endDate = dateRange[dateRange.length - 1];
 
             // Build CSV header
             let csv = 'LAST,FIRST';
@@ -581,14 +587,14 @@
                 return aLastName.localeCompare(bLastName);
             });
 
-            // Create attendance lookup
+            // Create attendance lookup using the same date format
             const attendanceLookup = {};
             records.forEach(record => {
-                const date = new Date(record.scan_time).toDateString();
+                const dateStr = new Date(record.scan_time).toDateString();
                 if (!attendanceLookup[record.barcode]) {
                     attendanceLookup[record.barcode] = new Set();
                 }
-                attendanceLookup[record.barcode].add(date);
+                attendanceLookup[record.barcode].add(dateStr);
             });
 
             // Add officers section
