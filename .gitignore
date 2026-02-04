@@ -9,7 +9,6 @@ lerna-debug.log*
 .node_repl_history
 *.tgz
 .yarn-integrity
-package_lock.json
 
 # Environment variables
 .env
