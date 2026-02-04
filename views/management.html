@@ -10,38 +10,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Management - The Iron Riders - Attendance</title>
     <link rel="stylesheet" href="/css/style.css">
-    <style>
-        .lead-badge {
-            background-color: #FDC20F;
-            color: white;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-
-        .executive-badge {
-            background-color: #1e351a;
-            color: white;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-
-
-        .member-badge {
-            background-color: #6c757d;
-            color: white;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-    </style>
 </head>
 
 <body>
@@ -99,13 +67,14 @@
 
             <div class="form-group">
                 <label for="csvFile">Select CSV File:</label>
-                <input type="file" id="csvFile" accept=".csv" style="margin-bottom: 10px;">
+                <input type="file" class="file-input" id="csvFile" accept=".csv" style="margin-bottom: 10px;">
             </div>
-
+            <form>
             <div class="form-group">
-                <button type="button" class="btn btn-primary" onclick="importCSV()">Import CSV</button>
+                <button type="button" class="btn btn-success" onclick="importCSV()">Import CSV</button>
                 <button type="button" class="btn btn-secondary" onclick="clearImport()">Clear</button>
             </div>
+            </form>
         </div>
 
         <!-- Members List -->
@@ -418,7 +387,7 @@
                 <div class="flex gap-1" style="margin-top: 20px; justify-content: center;">
                     <button type="button" class="btn btn-success" onclick="saveSchedules()">Save All Schedules</button>
                     <button type="button" class="btn btn-secondary" onclick="loadSchedules()">Reset to Saved</button>
-                    <button type="button" class="btn" onclick="clearAllSchedules()">Clear All</button>
+                    <button type="button" class="btn btn-danger" onclick="clearAllSchedules()">Clear All</button>
                 </div>
             </div>
         </div>

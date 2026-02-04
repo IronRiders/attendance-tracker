@@ -49,8 +49,8 @@
                         </div>
 
                         <div class="form-group" style="display: flex; align-items: end; gap: 10px;">
-                            <button class="btn" onclick="generateReport()">Generate Report</button>
-                            <button class="btn" onclick="generateASBReport()">Generate ASB Report</button>
+                            <button class="btn btn-success" onclick="generateReport()">Generate Report</button>
+                            <button class="btn btn-success" onclick="generateASBReport()">Generate ASB Report</button>
                         </div>
                     </div>
                 </div>
@@ -61,7 +61,7 @@
                     <div class="flex justify-between align-center mb-1">
                         <button class="btn btn-secondary" onclick="previousMonth()" id="prevMonthBtn">←
                             Previous</button>
-                        <h3 id="calendarTitle">Loading...</h3>
+                        <h3 style = "color: #fff;" id="calendarTitle">Loading...</h3>
                         <button class="btn btn-secondary" onclick="nextMonth()" id="nextMonthBtn">Next →</button>
                     </div>
                     <div id="calendar" class="calendar">
@@ -934,7 +934,7 @@
                 const date = parseUTCTimestamp(record.scan_time);
 
                 let recordType = 'Manual';
-                let typeColor = '#333';
+                let typeColor = '#fff';
 
                 if (record.is_auto_logout) {
                     recordType = 'Auto-Logout';

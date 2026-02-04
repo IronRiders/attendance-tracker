@@ -360,10 +360,10 @@ app.post("/api/kiosk/register", (req, res) => {
       .json({ error: "Name must be between 2 and 100 characters" });
   }
 
-  if (barcode.length < 1 || barcode.length > 50) {
+  if (barcode.length < 1 || barcode.length > 7) {
     return res
       .status(400)
-      .json({ error: "Barcode must be between 1 and 50 characters" });
+      .json({ error: "Barcode must be between 1 and 7 characters" });
   }
 
   db.addMember(name, barcode, "Member", function (err) {

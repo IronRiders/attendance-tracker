@@ -78,7 +78,7 @@
             </div>
             <div class="modal-body">
                 <p style="margin-bottom: 1rem; color: #666;">
-                    This ID is not registered. Please enter your name to sign up:
+                    This ID is not registered. Please enter your name to sign up.
                 </p>
                 <div class="form-group">
                     <label for="signupName">Full Name:</label>
@@ -94,7 +94,7 @@
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="closeSignupModal()">Cancel</button>
-                <button class="btn btn-primary" onclick="submitSignup()">Sign Up & Check In</button>
+                <button class="btn btn-success" onclick="submitSignup()">Sign Up & Check In</button>
             </div>
         </div>
     </div>
@@ -510,7 +510,7 @@
                     <span style="font-weight: 500;">${scan.name}</span>
                     <div>
                         <span style="color: ${actionColor}; font-weight: bold; font-size: 0.9rem;">${actionText}</span>
-                        <span style="color: #666; font-size: 0.8rem; margin-left: 8px;">
+                        <span style="color: #333; font-size: 0.8rem; margin-left: 8px;">
                             ${durationText}
                         </span>
                     </div>
@@ -658,9 +658,15 @@
                 return;
             }
 
+            if (!barcode) {
+                alert('Please scan or enter a barcode.');
+                barcodeInput.focus();
+                return;
+            }
+
             try {
                 // Disable button during submission
-                const submitBtn = document.querySelector('.btn-primary');
+                const submitBtn = document.querySelector('.btn-success');
                 const cancelBtn = document.querySelector('.btn-secondary');
                 submitBtn.disabled = true;
                 cancelBtn.disabled = true;
@@ -685,7 +691,7 @@
                     closeSignupModal();
 
                     // Show success message
-                    showStatus(`Welcome ${name}!<br>Account created successfully! Processing check-in...`, 'success');
+                    showStatus('Welcome ${name}!<br>Account created successfully! Processing check-in...', 'success');
 
                     // Wait a moment then process the barcode scan
                     setTimeout(() => {
