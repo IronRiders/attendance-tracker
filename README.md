@@ -1,16 +1,17 @@
-# ChainLynx Attendance System
+# Iron Riders Attendance System
 
 A complete attendance tracking system with barcode scanning capabilities, designed for organizations that need to track member attendance and generate detailed reports.
+Forked from Chainlynx attendance.
 
 ## Features
 
-### 🏢 Management Interface (Password Protected)
+### Management Interface (Password Protected)
 - Add, edit, and delete members
 - Assign unique barcodes to each member
 - Real-time member list management
 - Barcode scanner integration for member registration
 
-### 📊 Reports Interface (Password Protected)
+### Reports Interface (Password Protected)
 - Generate attendance reports by date range
 - View total hours worked by each member
 - Calendar view showing attendance patterns
@@ -18,7 +19,7 @@ A complete attendance tracking system with barcode scanning capabilities, design
 - Filter reports by specific members
 - Export functionality (CSV format)
 
-### 📱 Kiosk Interface (Public)
+### Kiosk Interface (Public)
 - Simple, touch-friendly interface for attendance tracking
 - Barcode scanner integration for quick check-in/check-out
 - Real-time feedback for successful scans
@@ -26,23 +27,29 @@ A complete attendance tracking system with barcode scanning capabilities, design
 - Automatic check-in/check-out detection
 - Manual ID entry option as fallback
 
-### 🔐 Security Features
+### Security Features
 - Session-based authentication
 - Password-protected admin areas
 - Secure database storage
 - Default admin credentials (changeable)
 
-## Technology Stack
-
+## Stack
 - **Backend**: Node.js with Express.js
-- **Database**: SQLite3 (local file-based)
+- **Database**: Local SQLite3
 - **Frontend**: Vanilla HTML/CSS/JavaScript
 - **Authentication**: bcrypt password hashing with sessions
-- **Styling**: Custom CSS with responsive design
 
 ## Installation
 
+TL;DR:
+   ```bash
+   git clone https://github.com/IronRiders/attendance-tracker && cd ./attendance-tracker && npm install && npm start
+   ```
+
 1. **Clone or download the project files**
+   ```bash
+   git clone https://github.com/IronRiders/attendance-tracker && cd ./attendance-tracker
+   ```
 
 2. **Install dependencies**:
    ```bash
@@ -70,7 +77,7 @@ A complete attendance tracking system with barcode scanning capabilities, design
 - **Username**: admin
 - **Password**: admin123
 
-*⚠️ Change these credentials in production by creating a new admin account and deleting the default one.*
+*!Change these credentials in production by creating a new admin account and deleting the default one.!*
 
 ## Usage Guide
 
@@ -86,8 +93,6 @@ A complete attendance tracking system with barcode scanning capabilities, design
 The system supports various barcode formats and can work with:
 - USB barcode scanners (HID keyboard emulation)
 - Manual barcode entry
-- QR codes
-- Any scannable identifier
 
 ### Taking Attendance
 
@@ -168,7 +173,7 @@ Sessions are configured in `server.js`:
 ## File Structure
 
 ```
-chainlynx-attendance/
+iron-riders-attendance/
 ├── server.js              # Main server file
 ├── database.js            # Database operations
 ├── package.json           # Node.js dependencies

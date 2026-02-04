@@ -1,7 +1,7 @@
 {
-  "name": "chainlynx-attendance",
+  "name": "iron-riders-attendance",
   "version": "1.0.0",
-  "description": "Attendance tracking system with barcode scanning",
+  "description": "Attendance tracking system with barcode scanning. Forked from Chainlynx attendance",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
