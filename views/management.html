@@ -11,8 +11,8 @@
     <title>Management - The Iron Riders - Attendance</title>
     <link rel="stylesheet" href="/css/style.css">
     <style>
-        .officer-badge {
-            background-color: #9A061C;
+        .lead-badge {
+            background-color: #FDC20F;
             color: white;
             padding: 4px 8px;
             border-radius: 4px;
@@ -20,6 +20,17 @@
             font-weight: bold;
             text-transform: uppercase;
         }
+
+        .executive-badge {
+            background-color: #1e351a;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
 
         .member-badge {
             background-color: #6c757d;
@@ -66,7 +77,8 @@
                     <label for="memberType">Member Type:</label>
                     <select id="memberType" name="memberType" required>
                         <option value="Member" selected>Member</option>
-                        <option value="Officer">Officer</option>
+                        <option value="Lead">Lead</option>
+                        <option value="Executive">Executive</option>
                     </select>
                 </div>
 
@@ -435,7 +447,8 @@
                     <label for="editMemberType">Member Type:</label>
                     <select id="editMemberType" name="memberType" required>
                         <option value="Member">Member</option>
-                        <option value="Officer">Officer</option>
+                        <option value="Lead">Lead</option>
+                        <option value="Executive">Executive</option>
                     </select>
                 </div>
 
@@ -982,7 +995,16 @@
                     members.forEach(member => {
                         const row = document.createElement('tr');
                         const memberType = member.member_type || 'Member';
-                        const typeClass = memberType === 'Officer' ? 'officer-badge' : 'member-badge';
+                        var typeClass;
+                        
+                        if (memberType === 'Executive') {
+                            typeClass = 'executive-badge'
+                        } else if (memberType === 'Lead') {
+                            typeClass = 'lead-badge'
+                        } else {
+                            typeClass = 'member-badge';
+                        }
+
                         row.innerHTML = `
                             <td>${member.name}</td>
                             <td>${member.barcode}</td>
@@ -999,7 +1021,7 @@
                     });
                 }
             } catch (error) {
-                tbody.innerHTML = '<tr><td colspan="5" class="text-center">Error loading members</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center">Error loading members: ' + error + '</td></tr>';
             }
 
             loading.classList.add('hidden');

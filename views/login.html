@@ -1,35 +1,41 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,200..900;1,200..900&display=swap"
+        rel="stylesheet">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - The Iron Riders - Attendance</title>
     <link rel="stylesheet" href="/css/style.css">
 </head>
+
 <body>
     <div class="login-container">
         <div class="login-form">
             <h2 class="text-center mb-1">Admin Login</h2>
             <p class="text-center" style="color: #666; margin-bottom: 2rem;">Access management and reports</p>
-            
+
             <div id="error-message" class="status-message status-error hidden"></div>
-            
+
             <form id="loginForm">
                 <div class="form-group">
                     <label for="username">Username:</label>
                     <input type="text" id="username" name="username" required>
                 </div>
-                
+
                 <div class="form-group">
                     <label for="password">Password:</label>
                     <input type="password" id="password" name="password" required>
                 </div>
-                
+
                 <button type="submit" class="btn" style="width: 100%;">Login</button>
             </form>
-            
+
             <div class="text-center mt-1">
-                <a href="/kiosk" style="color: #9A061C; text-decoration: none;">← Back to Kiosk</a>
+                <a href="/kiosk" style="color: #fdc20f; text-decoration: none;">← Back to Kiosk</a>
             </div>
         </div>
     </div>
@@ -37,11 +43,11 @@
     <script>
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
+
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
             const errorDiv = document.getElementById('error-message');
-            
+
             try {
                 const response = await fetch('/login', {
                     method: 'POST',
@@ -50,9 +56,9 @@
                     },
                     body: JSON.stringify({ username, password })
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (data.success) {
                     window.location.href = '/management';
                 } else {
@@ -69,10 +75,11 @@
         document.getElementById('username').addEventListener('input', () => {
             document.getElementById('error-message').classList.add('hidden');
         });
-        
+
         document.getElementById('password').addEventListener('input', () => {
             document.getElementById('error-message').classList.add('hidden');
         });
     </script>
 </body>
+
 </html>

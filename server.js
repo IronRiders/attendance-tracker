@@ -187,7 +187,7 @@ const requireAuth = (req, res, next) => {
   }
 };
 
-function destoryOldSessionOnLogout(req, res) {
+function destroyOldSessionOnLogout(req, res) {
   req.session.destroy((err) => {
     if (err) {
       console.error("Error destroying session on kiosk access:", err);
@@ -202,7 +202,7 @@ function destoryOldSessionOnLogout(req, res) {
 app.get("/", (req, res) => {
   // Auto-logout any admin session when accessing kiosk
   if (req.session && req.session.authenticated) {
-    destoryOldSessionOnLogout(req, res);
+    destroyOldSessionOnLogout(req, res);
   } else {
     res.sendFile(path.join(__dirname, "views/kiosk.html"));
   }
@@ -212,7 +212,7 @@ app.get("/", (req, res) => {
 app.get("/kiosk", (req, res) => {
   // Auto-logout any admin session when accessing kiosk
   if (req.session && req.session.authenticated) {
-    destoryOldSessionOnLogout(req, res);
+    destroyOldSessionOnLogout(req, res);
   } else {
     res.sendFile(path.join(__dirname, "views/kiosk.html"));
   }
@@ -311,7 +311,7 @@ app.get("/reports", requireAuth, (req, res) => {
 app.get("/api/members", requireAuth, (req, res) => {
   db.getAllMembers((err, members) => {
     if (err) {
-      res.status(500).json({ error: "Database error" });
+      res.status(500).json({ error: "Database error: " + err.message });
     } else {
       res.json(members);
     }
@@ -326,10 +326,10 @@ app.post("/api/members", requireAuth, (req, res) => {
   }
 
   // Validate member type
-  if (memberType && !["Member", "Officer"].includes(memberType)) {
+  if (memberType && !["Member", "Lead", "Executive"].includes(memberType)) {
     return res
       .status(400)
-      .json({ error: 'Invalid member type. Must be "Member" or "Officer"' });
+      .json({ error: 'Invalid member type. Must be "Member", "Lead", or "Executive"' });
   }
 
   db.addMember(name, barcode, memberType, function (err) {
@@ -337,7 +337,7 @@ app.post("/api/members", requireAuth, (req, res) => {
       if (err.code === "SQLITE_CONSTRAINT_UNIQUE") {
         res.status(400).json({ error: "Barcode already exists" });
       } else {
-        res.status(500).json({ error: "Database error" });
+        res.status(500).json({ error: "Database error: " + err.message });
       }
     } else {
       res.json({ success: true, id: this.lastID });
@@ -373,7 +373,7 @@ app.post("/api/kiosk/register", (req, res) => {
           .status(400)
           .json({
             error:
-              "This ID is already registered. Please use a different ID or contact an administrator.",
+              "This ID is already registered. Please use a different ID or contact an administrator. (@Software)",
           });
       } else {
         console.error("Database error in kiosk registration:", err);
@@ -381,7 +381,7 @@ app.post("/api/kiosk/register", (req, res) => {
           .status(500)
           .json({
             error:
-              "Registration failed. Please try again or contact an administrator.",
+              "Registration failed. Please try again or contact an administrator. (@Software)",
           });
       }
     } else {
@@ -406,10 +406,10 @@ app.put("/api/members/:id", requireAuth, (req, res) => {
   }
 
   // Validate member type
-  if (memberType && !["Member", "Officer"].includes(memberType)) {
+  if (memberType && !["Member", "Lead", "Executive"].includes(memberType)) {
     return res
       .status(400)
-      .json({ error: 'Invalid member type. Must be "Member" or "Officer"' });
+      .json({ error: 'Invalid member type. Must be "Member", "Lead", or "Executive"' });
   }
 
   db.updateMember(id, name, barcode, memberType, (err) => {
@@ -431,7 +431,7 @@ app.delete("/api/members/:id", requireAuth, (req, res) => {
 
   db.deleteMember(id, (err) => {
     if (err) {
-      res.status(500).json({ error: "Database error" });
+      res.status(500).json({ error: "Database error: " + err.message });
     } else {
       res.json({ success: true });
     }
@@ -458,7 +458,7 @@ app.post("/api/members/import", requireAuth, (req, res) => {
   db.bulkAddMembers(members, (err, result) => {
     if (err) {
       console.error("Error importing members:", err);
-      res.status(500).json({ error: "Database error during import" });
+      res.status(500).json({ error: "Database error during import: " + err.message });
     } else {
       res.json({
         success: true,
@@ -483,7 +483,7 @@ app.post("/api/attendance/scan", (req, res) => {
   // First, find the member by barcode
   db.getMemberByBarcode(barcode, (err, member) => {
     if (err) {
-      return res.status(500).json({ error: "Database error" });
+      return res.status(500).json({ error: "Database error: " + err.message });
     }
 
     if (!member) {
@@ -493,7 +493,7 @@ app.post("/api/attendance/scan", (req, res) => {
     // Get the last scan to determine if this is check-in or check-out
     db.getLastScanForMember(member.id, (err, lastScan) => {
       if (err) {
-        return res.status(500).json({ error: "Database error" });
+        return res.status(500).json({ error: "Database error: " + err.message });
       }
 
       // If no previous scan or last scan was check-out, this is a check-in
@@ -505,14 +505,14 @@ app.post("/api/attendance/scan", (req, res) => {
           if (err) {
             return res
               .status(500)
-              .json({ error: "Database error checking schedule" });
+              .json({ error: "Database error checking schedule: " + err.message });
           }
 
           if (!activeSession) {
             // Not within any meeting session, get next session info
             db.getNextMeetingSession((err, nextSession) => {
               if (err) {
-                return res.status(500).json({ error: "Database error" });
+                return res.status(500).json({ error: "Database error: " + err.message });
               }
 
               const dayNames = [
@@ -581,7 +581,7 @@ function recordAttendanceWithSession(member, isCheckin, session, res) {
 
   db.recordAttendance(member.id, isCheckin, needsReview, (err) => {
     if (err) {
-      return res.status(500).json({ error: "Database error" });
+      return res.status(500).json({ error: "Database error: " + err.message });
     }
 
     const response = {
@@ -614,7 +614,7 @@ app.get("/api/attendance", requireAuth, (req, res) => {
   if (memberId) {
     db.getAttendanceByMember(memberId, (err, records) => {
       if (err) {
-        res.status(500).json({ error: "Database error" });
+        res.status(500).json({ error: "Database error: " + err.message });
       } else {
         res.json(records);
       }
@@ -622,7 +622,7 @@ app.get("/api/attendance", requireAuth, (req, res) => {
   } else if (startDate && endDate) {
     db.getAttendanceByDateRange(startDate, endDate, (err, records) => {
       if (err) {
-        res.status(500).json({ error: "Database error" });
+        res.status(500).json({ error: "Database error: " + err.message });
       } else {
         res.json(records);
       }
@@ -630,7 +630,7 @@ app.get("/api/attendance", requireAuth, (req, res) => {
   } else {
     db.getAttendanceRecords((err, records) => {
       if (err) {
-        res.status(500).json({ error: "Database error" });
+        res.status(500).json({ error: "Database error: " + err.message });
       } else {
         res.json(records);
       }
@@ -646,7 +646,7 @@ app.get("/api/attendance/summary", requireAuth, (req, res) => {
 
   db.getAttendanceByDateRange(start, end, (err, records) => {
     if (err) {
-      return res.status(500).json({ error: "Database error" });
+      return res.status(500).json({ error: "Database error: " + err.message });
     }
 
     // Process records to calculate hours and summary
@@ -711,7 +711,7 @@ app.get("/api/currently-checked-in", (req, res) => {
   db.getCurrentlyCheckedInMembers((err, checkedInMembers) => {
     if (err) {
       console.error("Error getting checked-in members:", err);
-      res.status(500).json({ error: "Database error" });
+      res.status(500).json({ error: "Database error: " + err.message });
     } else {
       console.log("Currently checked-in members:", checkedInMembers);
       res.json(checkedInMembers);
@@ -723,7 +723,7 @@ app.get("/api/currently-checked-in", (req, res) => {
 app.get("/api/flagged-records", requireAuth, (req, res) => {
   db.getFlaggedRecords((err, records) => {
     if (err) {
-      res.status(500).json({ error: "Database error" });
+      res.status(500).json({ error: "Database error: " + err.message });
     } else {
       res.json(records);
     }
@@ -735,7 +735,7 @@ app.put("/api/flagged-records/:id/review", requireAuth, (req, res) => {
 
   db.markRecordAsReviewed(recordId, (err) => {
     if (err) {
-      res.status(500).json({ error: "Database error" });
+      res.status(500).json({ error: "Database error: " + err.message });
     } else {
       res.json({ success: true });
     }
@@ -752,7 +752,7 @@ app.post("/api/trigger-auto-logout", requireAuth, (req, res) => {
 app.get("/api/meeting-schedules", requireAuth, (req, res) => {
   db.getMeetingSchedules((err, schedules) => {
     if (err) {
-      res.status(500).json({ error: "Database error" });
+      res.status(500).json({ error: "Database error: " + err.message });
     } else {
       res.json(schedules);
     }
@@ -762,7 +762,7 @@ app.get("/api/meeting-schedules", requireAuth, (req, res) => {
 app.get("/api/meeting-schedules/current", (req, res) => {
   db.isWithinMeetingSchedule((err, activeSession) => {
     if (err) {
-      return res.status(500).json({ error: "Database error" });
+      return res.status(500).json({ error: "Database error: " + err.message });
     }
 
     if (activeSession) {
@@ -880,7 +880,7 @@ app.delete("/api/meeting-schedules/:day/:session", requireAuth, (req, res) => {
 
   db.deleteMeetingSchedule(dayOfWeek, sessionNumber, (err) => {
     if (err) {
-      res.status(500).json({ error: "Database error" });
+      res.status(500).json({ error: "Database error: " + err.message });
     } else {
       // Remove the specific cron job for this session
       const schedulerId = `${dayOfWeek}-${sessionNumber}`;
