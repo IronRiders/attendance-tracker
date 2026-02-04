@@ -1,4 +1,4 @@
-# Iron Riders Attendance System
+# The Iron Riders - Attendance System
 
 A complete attendance tracking system with barcode scanning capabilities, designed for organizations that need to track member attendance and generate detailed reports.
 Forked from Chainlynx attendance.
