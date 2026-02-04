@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,200..900;1,200..900&display=swap"
+        rel="stylesheet">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Management - The Iron Riders - Attendance</title>
@@ -15,6 +20,7 @@
             font-weight: bold;
             text-transform: uppercase;
         }
+
         .member-badge {
             background-color: #6c757d;
             color: white;
@@ -26,6 +32,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <div class="header">
@@ -42,19 +49,19 @@
         <div class="card">
             <h2>Add New Member</h2>
             <div id="add-message" class="status-message hidden"></div>
-            
+
             <form id="addMemberForm">
                 <div class="form-group">
                     <label for="name">Full Name:</label>
                     <input type="text" id="name" name="name" required>
                 </div>
-                
+
                 <div class="form-group">
                     <label for="barcode">Barcode/ID:</label>
-                    <input type="text" id="barcode" name="barcode" required 
-                           placeholder="Scan barcode or enter manually">
+                    <input type="text" id="barcode" name="barcode" required
+                        placeholder="Scan barcode or enter manually">
                 </div>
-                
+
                 <div class="form-group">
                     <label for="memberType">Member Type:</label>
                     <select id="memberType" name="memberType" required>
@@ -62,7 +69,7 @@
                         <option value="Officer">Officer</option>
                     </select>
                 </div>
-                
+
                 <button type="submit" class="btn btn-success">Add Member</button>
                 <button type="button" class="btn btn-secondary" onclick="clearForm()">Clear</button>
             </form>
@@ -72,17 +79,17 @@
         <div class="card">
             <h2>Import Members from CSV</h2>
             <div id="import-message" class="status-message hidden"></div>
-            
+
             <p style="margin-bottom: 20px; color: #666; font-size: 14px;">
                 Upload a CSV file with two columns: Barcode (first column) and Name (second column).
                 Existing members with the same barcode will be skipped.
             </p>
-            
+
             <div class="form-group">
                 <label for="csvFile">Select CSV File:</label>
                 <input type="file" id="csvFile" accept=".csv" style="margin-bottom: 10px;">
             </div>
-            
+
             <div class="form-group">
                 <button type="button" class="btn btn-primary" onclick="importCSV()">Import CSV</button>
                 <button type="button" class="btn btn-secondary" onclick="clearImport()">Clear</button>
@@ -93,11 +100,12 @@
         <div class="card">
             <div class="flex justify-between align-center">
                 <h2>Current Members</h2>
-                <button class="btn btn-secondary" onclick="loadMembers()" style="padding: 12px 24px; font-size: 16px;">Refresh</button>
+                <button class="btn btn-secondary" onclick="loadMembers()"
+                    style="padding: 12px 24px; font-size: 16px;">Refresh</button>
             </div>
-            
+
             <div id="loading" class="spinner hidden"></div>
-            
+
             <div class="table-container">
                 <table id="membersTable">
                     <thead>
@@ -120,239 +128,281 @@
         <div class="card">
             <h2>Meeting Schedules</h2>
             <div id="schedule-message" class="status-message hidden"></div>
-            
+
             <p style="margin-bottom: 20px; color: #666; font-size: 14px;">
-                Configure up to 3 meeting sessions per day. Users can only check in during active session times. 
+                Configure up to 3 meeting sessions per day. Users can only check in during active session times.
                 Automatic logout occurs when each session ends.
             </p>
-            
+
             <div id="schedule-container">
                 <div id="loading-schedules" class="spinner hidden"></div>
-                
+
                 <div class="schedule-days">
                     <div class="schedule-day" data-day="1">
                         <h3>Monday</h3>
                         <div class="sessions">
                             <div class="session" data-session="1">
                                 <div class="session-header">
-                                    <input type="text" class="session-name-input" name="session_name" placeholder="Session 1" value="Session 1">
+                                    <input type="text" class="session-name-input" name="session_name"
+                                        placeholder="Session 1" value="Session 1">
                                 </div>
                                 <div class="time-inputs">
                                     <label>Start: <input type="time" name="start_time" class="session-input"></label>
                                     <label>End: <input type="time" name="end_time" class="session-input"></label>
-                                    <button type="button" class="btn-small btn-danger" onclick="clearSession(this)">Clear</button>
+                                    <button type="button" class="btn-small btn-danger"
+                                        onclick="clearSession(this)">Clear</button>
                                 </div>
                             </div>
                             <div class="session" data-session="2">
                                 <div class="session-header">
-                                    <input type="text" class="session-name-input" name="session_name" placeholder="Session 2" value="Session 2">
+                                    <input type="text" class="session-name-input" name="session_name"
+                                        placeholder="Session 2" value="Session 2">
                                 </div>
                                 <div class="time-inputs">
                                     <label>Start: <input type="time" name="start_time" class="session-input"></label>
                                     <label>End: <input type="time" name="end_time" class="session-input"></label>
-                                    <button type="button" class="btn-small btn-danger" onclick="clearSession(this)">Clear</button>
+                                    <button type="button" class="btn-small btn-danger"
+                                        onclick="clearSession(this)">Clear</button>
                                 </div>
                             </div>
                             <div class="session" data-session="3">
                                 <div class="session-header">
-                                    <input type="text" class="session-name-input" name="session_name" placeholder="Session 3" value="Session 3">
+                                    <input type="text" class="session-name-input" name="session_name"
+                                        placeholder="Session 3" value="Session 3">
                                 </div>
                                 <div class="time-inputs">
                                     <label>Start: <input type="time" name="start_time" class="session-input"></label>
                                     <label>End: <input type="time" name="end_time" class="session-input"></label>
-                                    <button type="button" class="btn-small btn-danger" onclick="clearSession(this)">Clear</button>
+                                    <button type="button" class="btn-small btn-danger"
+                                        onclick="clearSession(this)">Clear</button>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="schedule-day" data-day="2">
                         <h3>Tuesday</h3>
                         <div class="sessions">
                             <div class="session" data-session="1">
                                 <div class="session-header">
-                                    <input type="text" class="session-name-input" name="session_name" placeholder="Session 1" value="Session 1">
+                                    <input type="text" class="session-name-input" name="session_name"
+                                        placeholder="Session 1" value="Session 1">
                                 </div>
                                 <div class="time-inputs">
                                     <label>Start: <input type="time" name="start_time" class="session-input"></label>
                                     <label>End: <input type="time" name="end_time" class="session-input"></label>
-                                    <button type="button" class="btn-small btn-danger" onclick="clearSession(this)">Clear</button>
+                                    <button type="button" class="btn-small btn-danger"
+                                        onclick="clearSession(this)">Clear</button>
                                 </div>
                             </div>
                             <div class="session" data-session="2">
                                 <div class="session-header">
-                                    <input type="text" class="session-name-input" name="session_name" placeholder="Session 2" value="Session 2">
+                                    <input type="text" class="session-name-input" name="session_name"
+                                        placeholder="Session 2" value="Session 2">
                                 </div>
                                 <div class="time-inputs">
                                     <label>Start: <input type="time" name="start_time" class="session-input"></label>
                                     <label>End: <input type="time" name="end_time" class="session-input"></label>
-                                    <button type="button" class="btn-small btn-danger" onclick="clearSession(this)">Clear</button>
+                                    <button type="button" class="btn-small btn-danger"
+                                        onclick="clearSession(this)">Clear</button>
                                 </div>
                             </div>
                             <div class="session" data-session="3">
                                 <div class="session-header">
-                                    <input type="text" class="session-name-input" name="session_name" placeholder="Session 3" value="Session 3">
+                                    <input type="text" class="session-name-input" name="session_name"
+                                        placeholder="Session 3" value="Session 3">
                                 </div>
                                 <div class="time-inputs">
                                     <label>Start: <input type="time" name="start_time" class="session-input"></label>
                                     <label>End: <input type="time" name="end_time" class="session-input"></label>
-                                    <button type="button" class="btn-small btn-danger" onclick="clearSession(this)">Clear</button>
+                                    <button type="button" class="btn-small btn-danger"
+                                        onclick="clearSession(this)">Clear</button>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="schedule-day" data-day="3">
                         <h3>Wednesday</h3>
                         <div class="sessions">
                             <div class="session" data-session="1">
-                                <div class="session-header"><input type="text" class="session-name-input" name="session_name" placeholder="Session 1" value="Session 1"></div>
+                                <div class="session-header"><input type="text" class="session-name-input"
+                                        name="session_name" placeholder="Session 1" value="Session 1"></div>
                                 <div class="time-inputs">
                                     <label>Start: <input type="time" name="start_time" class="session-input"></label>
                                     <label>End: <input type="time" name="end_time" class="session-input"></label>
-                                    <button type="button" class="btn-small btn-danger" onclick="clearSession(this)">Clear</button>
+                                    <button type="button" class="btn-small btn-danger"
+                                        onclick="clearSession(this)">Clear</button>
                                 </div>
                             </div>
                             <div class="session" data-session="2">
-                                <div class="session-header"><input type="text" class="session-name-input" name="session_name" placeholder="Session 2" value="Session 2"></div>
+                                <div class="session-header"><input type="text" class="session-name-input"
+                                        name="session_name" placeholder="Session 2" value="Session 2"></div>
                                 <div class="time-inputs">
                                     <label>Start: <input type="time" name="start_time" class="session-input"></label>
                                     <label>End: <input type="time" name="end_time" class="session-input"></label>
-                                    <button type="button" class="btn-small btn-danger" onclick="clearSession(this)">Clear</button>
+                                    <button type="button" class="btn-small btn-danger"
+                                        onclick="clearSession(this)">Clear</button>
                                 </div>
                             </div>
                             <div class="session" data-session="3">
-                                <div class="session-header"><input type="text" class="session-name-input" name="session_name" placeholder="Session 3" value="Session 3"></div>
+                                <div class="session-header"><input type="text" class="session-name-input"
+                                        name="session_name" placeholder="Session 3" value="Session 3"></div>
                                 <div class="time-inputs">
                                     <label>Start: <input type="time" name="start_time" class="session-input"></label>
                                     <label>End: <input type="time" name="end_time" class="session-input"></label>
-                                    <button type="button" class="btn-small btn-danger" onclick="clearSession(this)">Clear</button>
+                                    <button type="button" class="btn-small btn-danger"
+                                        onclick="clearSession(this)">Clear</button>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="schedule-day" data-day="4">
                         <h3>Thursday</h3>
                         <div class="sessions">
                             <div class="session" data-session="1">
-                                <div class="session-header"><input type="text" class="session-name-input" name="session_name" placeholder="Session 1" value="Session 1"></div>
+                                <div class="session-header"><input type="text" class="session-name-input"
+                                        name="session_name" placeholder="Session 1" value="Session 1"></div>
                                 <div class="time-inputs">
                                     <label>Start: <input type="time" name="start_time" class="session-input"></label>
                                     <label>End: <input type="time" name="end_time" class="session-input"></label>
-                                    <button type="button" class="btn-small btn-danger" onclick="clearSession(this)">Clear</button>
+                                    <button type="button" class="btn-small btn-danger"
+                                        onclick="clearSession(this)">Clear</button>
                                 </div>
                             </div>
                             <div class="session" data-session="2">
-                                <div class="session-header"><input type="text" class="session-name-input" name="session_name" placeholder="Session 2" value="Session 2"></div>
+                                <div class="session-header"><input type="text" class="session-name-input"
+                                        name="session_name" placeholder="Session 2" value="Session 2"></div>
                                 <div class="time-inputs">
                                     <label>Start: <input type="time" name="start_time" class="session-input"></label>
                                     <label>End: <input type="time" name="end_time" class="session-input"></label>
-                                    <button type="button" class="btn-small btn-danger" onclick="clearSession(this)">Clear</button>
+                                    <button type="button" class="btn-small btn-danger"
+                                        onclick="clearSession(this)">Clear</button>
                                 </div>
                             </div>
                             <div class="session" data-session="3">
-                                <div class="session-header"><input type="text" class="session-name-input" name="session_name" placeholder="Session 3" value="Session 3"></div>
+                                <div class="session-header"><input type="text" class="session-name-input"
+                                        name="session_name" placeholder="Session 3" value="Session 3"></div>
                                 <div class="time-inputs">
                                     <label>Start: <input type="time" name="start_time" class="session-input"></label>
                                     <label>End: <input type="time" name="end_time" class="session-input"></label>
-                                    <button type="button" class="btn-small btn-danger" onclick="clearSession(this)">Clear</button>
+                                    <button type="button" class="btn-small btn-danger"
+                                        onclick="clearSession(this)">Clear</button>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="schedule-day" data-day="5">
                         <h3>Friday</h3>
                         <div class="sessions">
                             <div class="session" data-session="1">
-                                <div class="session-header"><input type="text" class="session-name-input" name="session_name" placeholder="Session 1" value="Session 1"></div>
+                                <div class="session-header"><input type="text" class="session-name-input"
+                                        name="session_name" placeholder="Session 1" value="Session 1"></div>
                                 <div class="time-inputs">
                                     <label>Start: <input type="time" name="start_time" class="session-input"></label>
                                     <label>End: <input type="time" name="end_time" class="session-input"></label>
-                                    <button type="button" class="btn-small btn-danger" onclick="clearSession(this)">Clear</button>
+                                    <button type="button" class="btn-small btn-danger"
+                                        onclick="clearSession(this)">Clear</button>
                                 </div>
                             </div>
                             <div class="session" data-session="2">
-                                <div class="session-header"><input type="text" class="session-name-input" name="session_name" placeholder="Session 2" value="Session 2"></div>
+                                <div class="session-header"><input type="text" class="session-name-input"
+                                        name="session_name" placeholder="Session 2" value="Session 2"></div>
                                 <div class="time-inputs">
                                     <label>Start: <input type="time" name="start_time" class="session-input"></label>
                                     <label>End: <input type="time" name="end_time" class="session-input"></label>
-                                    <button type="button" class="btn-small btn-danger" onclick="clearSession(this)">Clear</button>
+                                    <button type="button" class="btn-small btn-danger"
+                                        onclick="clearSession(this)">Clear</button>
                                 </div>
                             </div>
                             <div class="session" data-session="3">
-                                <div class="session-header"><input type="text" class="session-name-input" name="session_name" placeholder="Session 3" value="Session 3"></div>
+                                <div class="session-header"><input type="text" class="session-name-input"
+                                        name="session_name" placeholder="Session 3" value="Session 3"></div>
                                 <div class="time-inputs">
                                     <label>Start: <input type="time" name="start_time" class="session-input"></label>
                                     <label>End: <input type="time" name="end_time" class="session-input"></label>
-                                    <button type="button" class="btn-small btn-danger" onclick="clearSession(this)">Clear</button>
+                                    <button type="button" class="btn-small btn-danger"
+                                        onclick="clearSession(this)">Clear</button>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="schedule-day" data-day="6">
                         <h3>Saturday</h3>
                         <div class="sessions">
                             <div class="session" data-session="1">
-                                <div class="session-header"><input type="text" class="session-name-input" name="session_name" placeholder="Session 1" value="Session 1"></div>
+                                <div class="session-header"><input type="text" class="session-name-input"
+                                        name="session_name" placeholder="Session 1" value="Session 1"></div>
                                 <div class="time-inputs">
                                     <label>Start: <input type="time" name="start_time" class="session-input"></label>
                                     <label>End: <input type="time" name="end_time" class="session-input"></label>
-                                    <button type="button" class="btn-small btn-danger" onclick="clearSession(this)">Clear</button>
+                                    <button type="button" class="btn-small btn-danger"
+                                        onclick="clearSession(this)">Clear</button>
                                 </div>
                             </div>
                             <div class="session" data-session="2">
-                                <div class="session-header"><input type="text" class="session-name-input" name="session_name" placeholder="Session 2" value="Session 2"></div>
+                                <div class="session-header"><input type="text" class="session-name-input"
+                                        name="session_name" placeholder="Session 2" value="Session 2"></div>
                                 <div class="time-inputs">
                                     <label>Start: <input type="time" name="start_time" class="session-input"></label>
                                     <label>End: <input type="time" name="end_time" class="session-input"></label>
-                                    <button type="button" class="btn-small btn-danger" onclick="clearSession(this)">Clear</button>
+                                    <button type="button" class="btn-small btn-danger"
+                                        onclick="clearSession(this)">Clear</button>
                                 </div>
                             </div>
                             <div class="session" data-session="3">
-                                <div class="session-header"><input type="text" class="session-name-input" name="session_name" placeholder="Session 3" value="Session 3"></div>
+                                <div class="session-header"><input type="text" class="session-name-input"
+                                        name="session_name" placeholder="Session 3" value="Session 3"></div>
                                 <div class="time-inputs">
                                     <label>Start: <input type="time" name="start_time" class="session-input"></label>
                                     <label>End: <input type="time" name="end_time" class="session-input"></label>
-                                    <button type="button" class="btn-small btn-danger" onclick="clearSession(this)">Clear</button>
+                                    <button type="button" class="btn-small btn-danger"
+                                        onclick="clearSession(this)">Clear</button>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="schedule-day" data-day="0">
                         <h3>Sunday</h3>
                         <div class="sessions">
                             <div class="session" data-session="1">
-                                <div class="session-header"><input type="text" class="session-name-input" name="session_name" placeholder="Session 1" value="Session 1"></div>
+                                <div class="session-header"><input type="text" class="session-name-input"
+                                        name="session_name" placeholder="Session 1" value="Session 1"></div>
                                 <div class="time-inputs">
                                     <label>Start: <input type="time" name="start_time" class="session-input"></label>
                                     <label>End: <input type="time" name="end_time" class="session-input"></label>
-                                    <button type="button" class="btn-small btn-danger" onclick="clearSession(this)">Clear</button>
+                                    <button type="button" class="btn-small btn-danger"
+                                        onclick="clearSession(this)">Clear</button>
                                 </div>
                             </div>
                             <div class="session" data-session="2">
-                                <div class="session-header"><input type="text" class="session-name-input" name="session_name" placeholder="Session 2" value="Session 2"></div>
+                                <div class="session-header"><input type="text" class="session-name-input"
+                                        name="session_name" placeholder="Session 2" value="Session 2"></div>
                                 <div class="time-inputs">
                                     <label>Start: <input type="time" name="start_time" class="session-input"></label>
                                     <label>End: <input type="time" name="end_time" class="session-input"></label>
-                                    <button type="button" class="btn-small btn-danger" onclick="clearSession(this)">Clear</button>
+                                    <button type="button" class="btn-small btn-danger"
+                                        onclick="clearSession(this)">Clear</button>
                                 </div>
                             </div>
                             <div class="session" data-session="3">
-                                <div class="session-header"><input type="text" class="session-name-input" name="session_name" placeholder="Session 3" value="Session 3"></div>
+                                <div class="session-header"><input type="text" class="session-name-input"
+                                        name="session_name" placeholder="Session 3" value="Session 3"></div>
                                 <div class="time-inputs">
                                     <label>Start: <input type="time" name="start_time" class="session-input"></label>
                                     <label>End: <input type="time" name="end_time" class="session-input"></label>
-                                    <button type="button" class="btn-small btn-danger" onclick="clearSession(this)">Clear</button>
+                                    <button type="button" class="btn-small btn-danger"
+                                        onclick="clearSession(this)">Clear</button>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="flex gap-1" style="margin-top: 20px; justify-content: center;">
                     <button type="button" class="btn btn-success" onclick="saveSchedules()">Save All Schedules</button>
                     <button type="button" class="btn btn-secondary" onclick="loadSchedules()">Reset to Saved</button>
@@ -367,20 +417,20 @@
         <div class="card" style="max-width: 500px; width: 90%;">
             <h2>Edit Member</h2>
             <div id="edit-message" class="status-message hidden"></div>
-            
+
             <form id="editMemberForm">
                 <input type="hidden" id="editId" name="id">
-                
+
                 <div class="form-group">
                     <label for="editName">Full Name:</label>
                     <input type="text" id="editName" name="name" required>
                 </div>
-                
+
                 <div class="form-group">
                     <label for="editBarcode">Barcode/ID:</label>
                     <input type="text" id="editBarcode" name="barcode" required>
                 </div>
-                
+
                 <div class="form-group">
                     <label for="editMemberType">Member Type:</label>
                     <select id="editMemberType" name="memberType" required>
@@ -388,7 +438,7 @@
                         <option value="Officer">Officer</option>
                     </select>
                 </div>
-                
+
                 <div class="flex gap-1">
                     <button type="submit" class="btn btn-success">Save Changes</button>
                     <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
@@ -408,7 +458,7 @@
                 <div id="importSummary" class="import-summary">
                     <!-- Import summary will be populated here -->
                 </div>
-                
+
                 <div id="skippedSection" class="skipped-section hidden" style="margin-top: 20px;">
                     <h3>Skipped Members:</h3>
                     <div class="table-container">
@@ -426,7 +476,7 @@
                         </table>
                     </div>
                 </div>
-                
+
                 <div id="errorSection" class="error-section hidden" style="margin-top: 20px;">
                     <h3>Errors:</h3>
                     <div class="error-list">
@@ -444,17 +494,55 @@
 
     <script>
         let members = [];
-        
+
+        // Add name field validation
+        const barcodeInputElement = document.getElementById('barcode');
+
+        // Validate barcode input to only allow numbers and spaces
+        barcodeInputElement.addEventListener('input', (e) => {
+            const validValue = e.target.value.replace(/[^0-9\s]/g, '');
+            if (e.target.value !== validValue) {
+                e.target.value = validValue;
+            }
+
+            if (e.target.value.length > 7) {
+                e.target.value = e.target.value.substring(0, 7)
+            }
+        });
+
+        // Prevent invalid keystrokes in barcode field
+        barcodeInputElement.addEventListener('keydown', (e) => {
+            // Allow: backspace, delete, tab, escape, enter
+            if ([8, 9, 27, 13, 46].indexOf(e.keyCode) !== -1 ||
+                // Allow: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+                (e.keyCode === 65 && e.ctrlKey === true) ||
+                (e.keyCode === 67 && e.ctrlKey === true) ||
+                (e.keyCode === 86 && e.ctrlKey === true) ||
+                (e.keyCode === 88 && e.ctrlKey === true) ||
+                // Allow: home, end, left, right, down, up
+                (e.keyCode >= 35 && e.keyCode <= 40)) {
+                return; // Let it happen
+            }
+
+            // Allow numbers 0-9 (top row) and numpad
+            if ((e.keyCode >= 48 && e.keyCode <= 57) || (e.keyCode >= 96 && e.keyCode <= 105)) {
+                return; // Let it happen
+            }
+
+            // Block everything else
+            e.preventDefault();
+        });
+
         // Function to update session highlighting based on input values
         function updateSessionHighlighting(sessionDiv) {
             const startInput = sessionDiv.querySelector('input[name="start_time"]');
             const endInput = sessionDiv.querySelector('input[name="end_time"]');
-            
+
             // Don't change styling if session is marked as cleared
             if (sessionDiv.classList.contains('session-cleared')) {
                 return;
             }
-            
+
             // Check if both start and end times are filled
             if (startInput.value && endInput.value) {
                 sessionDiv.classList.add('session-active');
@@ -462,29 +550,29 @@
                 sessionDiv.classList.remove('session-active');
             }
         }
-        
+
         // Function to setup event listeners for all session inputs
         function setupSessionHighlighting() {
             // Get all session divs
             const sessionDivs = document.querySelectorAll('.session');
-            
+
             sessionDivs.forEach(sessionDiv => {
                 const startInput = sessionDiv.querySelector('input[name="start_time"]');
                 const endInput = sessionDiv.querySelector('input[name="end_time"]');
-                
+
                 // Add event listeners for input changes
                 if (startInput && endInput) {
                     startInput.addEventListener('input', () => updateSessionHighlighting(sessionDiv));
                     endInput.addEventListener('input', () => updateSessionHighlighting(sessionDiv));
                     startInput.addEventListener('change', () => updateSessionHighlighting(sessionDiv));
                     endInput.addEventListener('change', () => updateSessionHighlighting(sessionDiv));
-                    
+
                     // Initial check for existing values
                     updateSessionHighlighting(sessionDiv);
                 }
             });
         }
-        
+
         // Authentication check function
         async function checkAuth() {
             try {
@@ -492,17 +580,17 @@
                     method: 'GET',
                     credentials: 'include'
                 });
-                
+
                 if (response.status === 401) {
                     alert('Your session has expired. Please log in again.');
                     window.location.href = '/login';
                     return false;
                 }
-                
+
                 if (!response.ok) {
                     throw new Error('Network response was not ok');
                 }
-                
+
                 return true;
             } catch (error) {
                 console.error('Auth check failed:', error);
@@ -524,18 +612,18 @@
         // Enhanced fetch with authentication handling
         async function authenticatedFetch(url, options = {}) {
             options.credentials = 'include';
-            
+
             const response = await fetch(url, options);
-            
+
             if (response.status === 401) {
                 alert('Your session has expired. Please log in again.');
                 window.location.href = '/login';
                 throw new Error('Authentication required');
             }
-            
+
             return response;
         }
-        
+
         // Load members on page load
         document.addEventListener('DOMContentLoaded', async () => {
             // Check authentication on page load
@@ -543,16 +631,16 @@
             if (!isAuthenticated) {
                 return; // checkAuth handles redirect
             }
-            
+
             // Start periodic authentication checks
             startAuthCheck();
-            
+
             loadMembers();
             loadSchedules();
-            
+
             // Focus on barcode input for easy scanning
             document.getElementById('barcode').focus();
-            
+
             // Add event listeners for session input changes
             setupSessionHighlighting();
         });
@@ -560,11 +648,11 @@
         // Add member form handler
         document.getElementById('addMemberForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
+
             const formData = new FormData(e.target);
             const memberData = Object.fromEntries(formData);
             const messageDiv = document.getElementById('add-message');
-            
+
             try {
                 const response = await authenticatedFetch('/api/members', {
                     method: 'POST',
@@ -573,9 +661,9 @@
                     },
                     body: JSON.stringify(memberData)
                 });
-                
+
                 const result = await response.json();
-                
+
                 if (result.success) {
                     showMessage(messageDiv, 'Member added successfully!', 'success');
                     document.getElementById('addMemberForm').reset();
@@ -592,17 +680,17 @@
         // Edit member form handler
         document.getElementById('editMemberForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
+
             const formData = new FormData(e.target);
             const memberData = Object.fromEntries(formData);
             const id = document.getElementById('editId').value;
             const messageDiv = document.getElementById('edit-message');
-            
+
             if (!id) {
                 showMessage(messageDiv, 'No member ID found. Please try again.', 'error');
                 return;
             }
-            
+
             try {
                 const response = await fetch(`/api/members/${id}`, {
                     method: 'PUT',
@@ -611,14 +699,14 @@
                     },
                     body: JSON.stringify(memberData)
                 });
-                
+
                 if (!response.ok) {
                     const error = await response.text();
                     throw new Error(`Server error: ${response.status} - ${error}`);
                 }
-                
+
                 const result = await response.json();
-                
+
                 if (result.success) {
                     closeEditModal();
                     loadMembers();
@@ -635,14 +723,14 @@
         async function loadSchedules() {
             const loadingDiv = document.getElementById('loading-schedules');
             if (loadingDiv) loadingDiv.classList.remove('hidden');
-            
+
             try {
                 const response = await fetch('/api/meeting-schedules');
                 const schedules = await response.json();
-                
+
                 // Clear all existing schedule inputs
                 clearAllScheduleInputs();
-                
+
                 // Populate schedule inputs with loaded data
                 schedules.forEach(schedule => {
                     const dayDiv = document.querySelector(`.schedule-day[data-day="${schedule.day_of_week}"]`);
@@ -652,30 +740,30 @@
                             const startInput = sessionDiv.querySelector('input[name="start_time"]');
                             const endInput = sessionDiv.querySelector('input[name="end_time"]');
                             const nameInput = sessionDiv.querySelector('input[name="session_name"]');
-                            
+
                             if (startInput) startInput.value = schedule.start_time || '';
                             if (endInput) endInput.value = schedule.end_time || '';
                             if (nameInput) nameInput.value = schedule.session_name || `Session ${schedule.session_number}`;
-                            
+
                             // Update highlighting for this session
                             updateSessionHighlighting(sessionDiv);
                         }
                     }
                 });
-                
+
             } catch (error) {
                 console.error('Error loading schedules:', error);
-                showMessage(document.getElementById('schedule-message'), 
+                showMessage(document.getElementById('schedule-message'),
                     'Failed to load schedules', 'error');
             }
-            
+
             if (loadingDiv) loadingDiv.classList.add('hidden');
         }
-        
+
         function clearAllScheduleInputs() {
             const allInputs = document.querySelectorAll('.session-input, .session-name-input');
             const allSessions = document.querySelectorAll('.session');
-            
+
             allInputs.forEach(input => {
                 if (input.name === 'session_name') {
                     // Reset to default session name
@@ -686,7 +774,7 @@
                     input.value = '';
                 }
             });
-            
+
             // Remove all highlighting classes
             allSessions.forEach(sessionDiv => {
                 sessionDiv.classList.remove('session-active', 'session-cleared');
@@ -702,31 +790,31 @@
             const schedules = [];
             const messageDiv = document.getElementById('schedule-message');
             let hasErrors = false;
-            
+
             // Collect all schedule data and validate
             document.querySelectorAll('.schedule-day').forEach(dayDiv => {
                 const dayOfWeek = parseInt(dayDiv.getAttribute('data-day'));
                 console.log('Processing day:', dayOfWeek);
-                
+
                 dayDiv.querySelectorAll('.session').forEach(sessionDiv => {
                     const sessionNumber = parseInt(sessionDiv.getAttribute('data-session'));
                     const startTime = sessionDiv.querySelector('input[name="start_time"]').value;
                     const endTime = sessionDiv.querySelector('input[name="end_time"]').value;
                     const sessionName = sessionDiv.querySelector('input[name="session_name"]').value || `Session ${sessionNumber}`;
-                    
+
                     console.log(`Day ${dayOfWeek}, Session ${sessionNumber}: ${startTime} - ${endTime} (${sessionName})`);
-                    
+
                     // Only add sessions that have both start and end times
                     if (startTime && endTime) {
                         // Validate that start time is before end time
                         if (startTime >= endTime) {
                             console.error('Time validation error:', dayOfWeek, sessionNumber, startTime, endTime);
-                            showMessage(messageDiv, 
+                            showMessage(messageDiv,
                                 `Error: Start time must be before end time for ${getDayName(dayOfWeek)} ${sessionName}`, 'error');
                             hasErrors = true;
                             return;
                         }
-                        
+
                         schedules.push({
                             dayOfWeek: dayOfWeek,
                             sessionNumber: sessionNumber,
@@ -737,16 +825,16 @@
                     }
                 });
             });
-            
+
             console.log('Collected schedules:', schedules);
             console.log('Has errors:', hasErrors);
-            
+
             // Stop if there are validation errors
             if (hasErrors) {
                 console.log('Stopping due to validation errors');
                 return;
             }
-            
+
             console.log('Making API request with schedules:', schedules);
             try {
                 const response = await fetch('/api/meeting-schedules', {
@@ -756,22 +844,22 @@
                     },
                     body: JSON.stringify({ schedules })
                 });
-                
+
                 console.log('Response status:', response.status);
                 console.log('Response ok:', response.ok);
-                
+
                 if (!response.ok) {
                     const error = await response.text();
                     console.error('Server error response:', error);
                     throw new Error(`Server error: ${response.status} - ${error}`);
                 }
-                
+
                 const result = await response.json();
                 console.log('Server response:', result);
-                
+
                 if (result.success) {
                     showMessage(messageDiv, result.message || 'Schedules updated successfully!', 'success');
-                    
+
                     // Clear visual indicators and stored data for cleared sessions
                     document.querySelectorAll('.session-cleared').forEach(sessionDiv => {
                         sessionDiv.classList.remove('session-cleared');
@@ -779,46 +867,46 @@
                         delete sessionDiv.dataset.originalEnd;
                         delete sessionDiv.dataset.originalName;
                     });
-                    
+
                     // Note: Meeting scheduler is already refreshed server-side
                     console.log('Schedules saved and meeting scheduler refreshed server-side');
                 } else {
                     showMessage(messageDiv, result.error || 'Failed to update schedules', 'error');
                 }
-                
+
             } catch (error) {
                 console.error('Error saving schedules:', error);
                 showMessage(messageDiv, 'Network error. Please try again.', 'error');
             }
         }
-        
+
         function clearSession(button) {
             const sessionDiv = button.closest('.session');
             const startInput = sessionDiv.querySelector('input[name="start_time"]');
             const endInput = sessionDiv.querySelector('input[name="end_time"]');
             const nameInput = sessionDiv.querySelector('input[name="session_name"]');
             const sessionNumber = sessionDiv.getAttribute('data-session');
-            
+
             // Check if this session has any times set
             if (!startInput.value && !endInput.value) {
                 // Session is already empty, just reset the name
                 nameInput.value = `Session ${sessionNumber}`;
                 return;
             }
-            
+
             // Store original values for potential undo
             sessionDiv.dataset.originalStart = startInput.value;
             sessionDiv.dataset.originalEnd = endInput.value;
             sessionDiv.dataset.originalName = nameInput.value;
-            
+
             // Clear the form inputs locally
             startInput.value = '';
             endInput.value = '';
             nameInput.value = `Session ${sessionNumber}`;
-            
+
             // Add visual indication that this session was cleared (will be deleted on save)
             sessionDiv.classList.add('session-cleared');
-            
+
             // Show message that changes are pending
             const messageDiv = document.getElementById('schedule-message');
             showMessage(messageDiv, 'Session cleared locally. Click "Save All Schedules" to apply changes, or refresh page to undo.', 'warning');
@@ -829,26 +917,26 @@
             const startInput = sessionDiv.querySelector('input[name="start_time"]');
             const endInput = sessionDiv.querySelector('input[name="end_time"]');
             const nameInput = sessionDiv.querySelector('input[name="session_name"]');
-            
+
             if (sessionDiv.dataset.originalStart) {
                 startInput.value = sessionDiv.dataset.originalStart;
                 endInput.value = sessionDiv.dataset.originalEnd;
                 nameInput.value = sessionDiv.dataset.originalName;
-                
+
                 // Remove visual indication
                 sessionDiv.classList.remove('session-cleared');
-                
+
                 // Clear stored data
                 delete sessionDiv.dataset.originalStart;
                 delete sessionDiv.dataset.originalEnd;
                 delete sessionDiv.dataset.originalName;
-                
+
                 // Show undo message
                 const messageDiv = document.getElementById('schedule-message');
                 showMessage(messageDiv, 'Session restore undone.', 'info');
             }
         }
-        
+
         async function deleteSession(dayOfWeek, sessionNumber) {
             const response = await fetch(`/api/meeting-schedules/${dayOfWeek}/${sessionNumber}`, {
                 method: 'DELETE',
@@ -856,21 +944,21 @@
                     'Content-Type': 'application/json',
                 }
             });
-            
+
             if (!response.ok) {
                 const error = await response.text();
                 throw new Error(`Server error: ${response.status} - ${error}`);
             }
-            
+
             return response.json();
         }
-        
+
         function clearAllSchedules() {
             if (confirm('Are you sure you want to clear all meeting schedules? This will remove all session times.')) {
                 clearAllScheduleInputs();
             }
         }
-        
+
         function getDayName(dayOfWeek) {
             const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
             return days[dayOfWeek] || 'Unknown';
@@ -879,15 +967,15 @@
         async function loadMembers() {
             const loading = document.getElementById('loading');
             const tbody = document.getElementById('membersTableBody');
-            
+
             loading.classList.remove('hidden');
-            
+
             try {
                 const response = await authenticatedFetch('/api/members');
                 members = await response.json();
-                
+
                 tbody.innerHTML = '';
-                
+
                 if (members.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="5" class="text-center">No members found</td></tr>';
                 } else {
@@ -913,7 +1001,7 @@
             } catch (error) {
                 tbody.innerHTML = '<tr><td colspan="5" class="text-center">Error loading members</td></tr>';
             }
-            
+
             loading.classList.add('hidden');
         }
 
@@ -956,9 +1044,9 @@
                     const response = await fetch(`/api/members/${id}`, {
                         method: 'DELETE'
                     });
-                    
+
                     const result = await response.json();
-                    
+
                     if (result.success) {
                         loadMembers();
                         showMessage(document.getElementById('add-message'), 'Member deleted successfully', 'success');
@@ -981,7 +1069,7 @@
             element.textContent = message;
             element.className = `status-message status-${type}`;
             element.classList.remove('hidden');
-            
+
             setTimeout(() => {
                 element.classList.add('hidden');
             }, 5000);
@@ -1001,26 +1089,26 @@
         // Handle barcode scanner input
         let barcodeInput = '';
         let barcodeTimeout;
-        
+
         document.addEventListener('keypress', (e) => {
             const activeElement = document.activeElement;
-            
+
             // Only capture barcode when focused on barcode input fields
             if (activeElement && (activeElement.id === 'barcode' || activeElement.id === 'editBarcode')) {
                 clearTimeout(barcodeTimeout);
-                
+
                 if (e.key === 'Enter') {
                     // Barcode scanners typically send Enter after the code
-                    if (barcodeInput.length > 0) {
-                        activeElement.value = barcodeInput;
-                        barcodeInput = '';
+                    if (barcodeInputElement.length > 0) {
+                        activeElement.value = barcodeInputElement;
+                        barcodeInputElement = '';
                     }
                 } else {
-                    barcodeInput += e.key;
-                    
+                    barcodeInputElement += e.key;
+
                     // Reset after 100ms of inactivity
                     barcodeTimeout = setTimeout(() => {
-                        barcodeInput = '';
+                        barcodeInputElement = '';
                     }, 100);
                 }
             }
@@ -1030,28 +1118,28 @@
         async function importCSV() {
             const fileInput = document.getElementById('csvFile');
             const messageElement = document.getElementById('import-message');
-            
+
             if (!fileInput.files.length) {
                 showMessage(messageElement, 'Please select a CSV file first.', 'error');
                 return;
             }
-            
+
             const file = fileInput.files[0];
-            
+
             if (!file.name.toLowerCase().endsWith('.csv')) {
                 showMessage(messageElement, 'Please select a valid CSV file.', 'error');
                 return;
             }
-            
+
             try {
                 const csvText = await readFileAsText(file);
                 const parsedData = parseCSV(csvText);
-                
+
                 if (parsedData.length === 0) {
                     showMessage(messageElement, 'The CSV file appears to be empty.', 'error');
                     return;
                 }
-                
+
                 // Send to server for processing
                 const response = await fetch('/api/members/import', {
                     method: 'POST',
@@ -1060,26 +1148,26 @@
                     },
                     body: JSON.stringify({ members: parsedData })
                 });
-                
+
                 const result = await response.json();
-                
+
                 if (response.ok && result.success) {
                     // Show detailed results in modal popup
                     showImportResultsModal(result);
                     loadMembers(); // Refresh the members list
                     clearImport();
                 } else {
-                    showMessage(messageElement, 
-                        result.error || 'Error importing members. Please try again.', 
+                    showMessage(messageElement,
+                        result.error || 'Error importing members. Please try again.',
                         'error');
                 }
-                
+
             } catch (error) {
                 console.error('Error importing CSV:', error);
                 showMessage(messageElement, 'Error processing CSV file. Please check the format.', 'error');
             }
         }
-        
+
         function readFileAsText(file) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -1088,36 +1176,36 @@
                 reader.readAsText(file);
             });
         }
-        
+
         function parseCSV(csvText) {
             const lines = csvText.trim().split('\n');
             const members = [];
-            
+
             for (let i = 0; i < lines.length; i++) {
                 const line = lines[i].trim();
                 if (!line) continue;
-                
+
                 // Simple CSV parsing - split by comma and handle basic quoted fields
                 const columns = line.split(',').map(col => col.trim().replace(/^["']|["']$/g, ''));
-                
+
                 if (columns.length >= 2) {
                     const barcode = columns[0].trim();
                     const name = columns[1].trim();
-                    
+
                     if (barcode && name) {
                         members.push({ barcode, name });
                     }
                 }
             }
-            
+
             return members;
         }
-        
+
         function clearImport() {
             document.getElementById('csvFile').value = '';
             document.getElementById('import-message').classList.add('hidden');
         }
-        
+
         function escapeHtml(text) {
             const div = document.createElement('div');
             div.textContent = text;
@@ -1132,22 +1220,22 @@
             const errorSection = document.getElementById('errorSection');
             const skippedTableBody = document.getElementById('skippedTableBody');
             const errorList = document.getElementById('errorList');
-            
+
             // Build summary message
             let summaryHtml = `<div class="import-summary-success">
                 <h3>✅ Import Complete!</h3>
                 <p><strong>${result.imported}</strong> members successfully imported</p>`;
-            
+
             if (result.skipped > 0) {
                 summaryHtml += `<p><strong>${result.skipped}</strong> members skipped (duplicates or errors)</p>`;
             }
-            
+
             summaryHtml += `</div>`;
             summaryDiv.innerHTML = summaryHtml;
-            
+
             // Show skipped members if any
             if (result.skippedMembers && result.skippedMembers.length > 0) {
-                skippedTableBody.innerHTML = result.skippedMembers.map(member => 
+                skippedTableBody.innerHTML = result.skippedMembers.map(member =>
                     `<tr>
                         <td>${escapeHtml(member.barcode || '')}</td>
                         <td>${escapeHtml(member.name || '')}</td>
@@ -1158,27 +1246,27 @@
             } else {
                 skippedSection.classList.add('hidden');
             }
-            
+
             // Show errors if any
             if (result.errors && result.errors.length > 0) {
-                errorList.innerHTML = result.errors.map(error => 
+                errorList.innerHTML = result.errors.map(error =>
                     `<li>${escapeHtml(error)}</li>`
                 ).join('');
                 errorSection.classList.remove('hidden');
             } else {
                 errorSection.classList.add('hidden');
             }
-            
+
             // Show the modal
             modal.classList.remove('hidden');
         }
-        
+
         function closeImportResultsModal() {
             document.getElementById('importResultsModal').classList.add('hidden');
         }
 
         // Close modal when clicking outside of it
-        document.addEventListener('click', function(event) {
+        document.addEventListener('click', function (event) {
             const modal = document.getElementById('importResultsModal');
             if (event.target === modal) {
                 closeImportResultsModal();
@@ -1186,4 +1274,5 @@
         });
     </script>
 </body>
+
 </html>
