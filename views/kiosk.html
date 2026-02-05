@@ -8,6 +8,7 @@
         rel="stylesheet">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
     <title>Kiosk - The Iron Riders - Attendance</title>
     <link rel="stylesheet" href="/css/style.css">
 </head>
@@ -200,7 +201,7 @@
             updateDateTime();
             setInterval(updateDateTime, 1000); // Update every second
             loadCurrentlyCheckedIn();
-            //checkMeetingSchedule(); // Check current meeting schedule status
+            checkMeetingSchedule(); // Check current meeting schedule status
 
             // Refresh checked-in list every 10 seconds
             setInterval(loadCurrentlyCheckedIn, 10000);
